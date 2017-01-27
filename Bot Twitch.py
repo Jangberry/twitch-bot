@@ -2,18 +2,20 @@
 import socket
 import sys
 import time
+import thread
+import random
 from info import CHANNEL, PASS, NICK
 
 s = socket.socket()
-
 
 #Variables pour fonctions
 wiz = 0
 sel = -20
 grains = 0
+pause = False
+recurrenceMessages = ["Vous pouvez suivre @elemzje sur twitter: https://twitter.com/Elemzje", "Vous pouvez a tout moment ajouter le smurf d'@elemzje: lmjye. PC seulement, desolé les consoles ;("]
 
-
-def connection():                                                                                                           #Connection au serveur + channel
+def connection():  #Connection au serveur + channel
     print("connecting...")
     s.connect(("irc.chat.twitch.tv", 6667))
     print("identifing with nickname: "+NICK)
@@ -23,30 +25,37 @@ def connection():                                                               
     s.send("JOIN " + CHANNEL + "\r\n")
     print("Connected")
 
+def recurrence():
+    nb = 0
+    while pause = False:
+        send(random.choice(recurrenceMessages))
+        time.sleep(1000)
 
-def send(Message):                                                                                                          #Envoit de messages dans le Channel
+
+def send(Message):   #Envoit de messages dans le Channel
     if "/" in Message:
-        s.send("PRIVMSG " + CHANNEL + " :" + Message + "\r\n")              #envoie commande
+        s.send("PRIVMSG " + CHANNEL + " :" + Message + "\r\n")     #envoie commande
         print("Commande : " + Message)
     else:
-        s.send("PRIVMSG " + CHANNEL + " :/me _ MrDestructoid : " + Message + "\r\n")        #envoie message
+        s.send("PRIVMSG " + CHANNEL + " :/me _ MrDestructoid : " + Message + "\r\n")   #envoie message
         print("Envoyé : " + Message)
 
 connection()
 send("/me Le bot de l'enfer est de retour, cachez vous !!!")
+thread.start_new_thread(recurrence)
 
 try:
  while 1:
-    
+
     text = ""
     recu = s.recv(2040)
-    if len(recu.split(":")) >= 3:                                                                                           #séparation user/texte
+    if len(recu.split(":")) >= 3:      #séparation user/texte
         user = recu.split("!")[0]
         user = user.split(":")[1]
         for i in range(2, len(recu.split(":")), 1):
             text = text + recu.split(":")[i] + ":"
-        print(user+" : "+text)                                                                                              #log
-    elif "PING" in recu:                                                                                                    #pong
+        print(user+" : "+text)      #log
+    elif "PING" in recu:        #pong
         rep = recu.split(":")[1]
         s.send("PONG :" + rep + "\r\n")
         print("Ping")
@@ -154,7 +163,6 @@ try:
         if grains > 1000:
         	send("c'est le grain de sucre qui fait déborder le vase... sel reinitialisé à -20")
         	sel = -20
-
 
 
 
