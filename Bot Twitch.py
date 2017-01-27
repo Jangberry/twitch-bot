@@ -2,7 +2,7 @@
 import socket
 import sys
 import time
-import thread
+import threading
 import random
 from info import CHANNEL, PASS, NICK
 
@@ -13,7 +13,8 @@ wiz = 0
 sel = -20
 grains = 0
 pause = False
-recurrenceMessages = ["Vous pouvez suivre @elemzje sur twitter: https://twitter.com/Elemzje", "Vous pouvez a tout moment ajouter le smurf d'@elemzje: lmjye. PC seulement, desolé les consoles ;("]
+stop = False
+recurrenceMessages = ["Vous pouvez suivre @elemzje sur twitter: https://twitter.com/Elemzje", "Vous pouvez a tout moment ajouter le smurf d'@elemzje: lmjye. PC seulement, desolé les consoles :("]
 
 def connection():  #Connection au serveur + channel
     print("connecting...")
@@ -26,14 +27,17 @@ def connection():  #Connection au serveur + channel
     print("Connected")
 
 def recurrence():
-    nb = 0
-    while pause = False:
-        send(random.choice(recurrenceMessages))
-        time.sleep(1000)
-
+    while stop == 0:
+        time.sleep(1)
+        while pause == 0 and stop == 0:
+            send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)])
+            for i in range(0, 1000, 5):
+                time.sleep(5)
+                if pause == 1 or stop == 1:
+                    break
 
 def send(Message):   #Envoit de messages dans le Channel
-    if "/" in Message:
+    if "/" in Message.split(" ")[0]:
         s.send("PRIVMSG " + CHANNEL + " :" + Message + "\r\n")     #envoie commande
         print("Commande : " + Message)
     else:
@@ -42,7 +46,7 @@ def send(Message):   #Envoit de messages dans le Channel
 
 connection()
 send("/me Le bot de l'enfer est de retour, cachez vous !!!")
-thread.start_new_thread(recurrence)
+threading.Thread(target=recurrence).start()
 
 try:
  while 1:
@@ -105,6 +109,7 @@ try:
         print("au revoir")
         send("/me Sur demande de @" + user + " votre bot bien aimé s'en vas... au revoir. sckHLT ;) ")
         wiz = 0
+        pause = True
         while not "!bonjour" in text:
             text = ""
             recu = s.recv(2040)
@@ -117,6 +122,7 @@ try:
             elif "PING" in recu:
                 rep = recu.split(":")[1]
                 s.send("PONG :" + rep + "\r\n")
+        pause = False
         send("/me Votre bot préféré ( Kappa ) est de retour !!! Merci à @"+user+" pour avoir aidé le phoenix à renaitre de ses cendres")
         
     if "!config" in text and len(text.split(" ")) < 2:
@@ -167,7 +173,15 @@ try:
 
 
 
-
 except KeyboardInterrupt:
-	send("Votre bot bot préféré s'en vas sur demande imperative de son maitre suprême... Le bot reviendra potentiellement bientôt ;) sckHLT")
-	send("/disconnect")
+    stop = True
+    pause = True
+    send("Votre bot bot préféré s'en vas sur demande imperative de son maitre suprême... Le bot reviendra potentiellement bientôt ;) sckHLT")
+    send("/disconnect")
+    print("En attente de la fin du thread recurrence...")
+    for i in range(0, 5):
+        print("...")
+        time.sleep(1)
+    
+#except NameError:
+#    pass
