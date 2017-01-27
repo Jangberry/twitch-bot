@@ -41,7 +41,7 @@ def send(Message):   #Envoit de messages dans le Channel
         s.send("PRIVMSG " + CHANNEL + " :" + Message + "\r\n")     #envoie commande
         print("Commande : " + Message)
     else:
-        s.send("PRIVMSG " + CHANNEL + " :/me _ MrDestructoid : " + Message + "\r\n")   #envoie message
+        s.send("PRIVMSG " + CHANNEL + " :/me _ MrDestructoid : " + Message + "\r\n") #envoie message
         print("Envoyé : " + Message)
 
 connection()
@@ -52,6 +52,7 @@ try:
  while 1:
 
     text = ""
+    user = ""
     recu = s.recv(2040)
     if len(recu.split(":")) >= 3:      #séparation user/texte
         user = recu.split("!")[0]
@@ -73,8 +74,7 @@ try:
         if sel < 1:
         	send("On n'écrit pas \"c\" quand on parle français... on écrit \"c\'est\", \"ces\", \"ses\" ou encore \"sait\" @"+user)
         else:
-            send("*c'est ou ces @" + user)
-
+            send("*\"c'est\" ou \"ces\" @" + user)
 
     if " pa " in text and sel < 20:
     	if sel < 1:
@@ -86,7 +86,7 @@ try:
         if sel < 1:
         	send("On n'écrit pas \"t\" quand on parle francais... on écrit \"t'es\", \"thé\" ou \"tes\" @"+user)
         else:
-            send("*t'es ou tes @"+user)
+            send("*\"t'es\" ou \"tes\" @"+user)
         
     if ("blg" or "BLG" or "beluga" or "Beluga" or "béluga" or "Béluga") in text:
         send("sckBLG sckBLG sckBLG")
@@ -137,6 +137,8 @@ try:
         sel = sel+50
         grains = grains+50
         send("Le niveau de PJSalt est reglé à " + str(sel))
+        if grains > 1000:
+        	grains = grains - 50
 
     if "!sel" in text:
         send("Le niveau de PJSalt actuel est de " + str(sel))
@@ -145,6 +147,8 @@ try:
         sel = sel-50
         grains = grains+50
         send("Le niveau de PJSalt est reglé à "+ str(sel))
+        if grains > 1000:
+            	grains = grains - 50
 
     if (" con " or " merde " or " chiant ") in text:
         sel = sel + 1
@@ -156,7 +160,7 @@ try:
         grains = grains +1
         print(str(sel))
         if grains > 1000:
-        	send("c'est le grain de sel qui fait déborder le vase... sel reinitialisé à 20")
+        	send("c'est le grain de sel de @" + user + " qui fait déborder le vase... sel reinitialisé à 20")
         	sel = 20
 		
     if (" amour " or " aime " or "<3" or "Kappa") in text:
@@ -165,9 +169,8 @@ try:
         sel = sel - 2
         print(str(sel))
         grains = grains + 2
-        
         if grains > 1000:
-        	send("c'est le grain de sucre qui fait déborder le vase... sel reinitialisé à -20")
+        	send("c'est le grain de sucre de @" + user + " qui fait déborder le vase... sel reinitialisé à -20")
         	sel = -20
 
 
@@ -182,6 +185,3 @@ except KeyboardInterrupt:
     for i in range(0, 5):
         print("...")
         time.sleep(1)
-    
-#except NameError:
-#    pass
