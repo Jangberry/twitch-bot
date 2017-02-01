@@ -87,6 +87,9 @@ def lcd_byte(bits, mode):
   bus.write_byte(I2C_ADDR, bits_low)
   lcd_toggle_enable(bits_low)
 
+def close():
+  lcd_byte(0x01, LCD_CMD)
+
 def lcd_toggle_enable(bits):
   # Toggle enable
   time.sleep(E_DELAY)
@@ -113,11 +116,12 @@ def main():
 
 
 
+SEL="?"
 
-
-def Afficher(text):
+def Afficher(text, sel=SEL):
     lcd_string(text[:16],LCD_LINE_1)
-    lcd_string(text[16:32],LCD_LINE_2)
+    lcd_string(text[16:28]+" "+str(sel),LCD_LINE_2)
+    SEL = sel
 
 if __name__ == '__main__':
 

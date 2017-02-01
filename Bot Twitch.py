@@ -19,6 +19,7 @@ stop = False
 recurrenceMessages = ["Vous pouvez suivre @elemzje sur twitter: https://twitter.com/Elemzje", "Vous pouvez a tout moment ajouter le smurf d'@elemzje: lmjye sur Uplay."]
 
 def connection():  #Connection au serveur + channel
+    lcd_i2c.Afficher("Connexion...")
     print("connecting...")
     s.connect(("irc.chat.twitch.tv", 6667))
     print("identifing with nickname: "+NICK)
@@ -27,6 +28,7 @@ def connection():  #Connection au serveur + channel
     print("joining channel " + CHANNEL)
     s.send("JOIN " + CHANNEL + "\r\n")
     print("Connected")
+    lcd_i2c.Afficher("Connecté")
 
 def recurrence():
     while stop == 0:
@@ -48,7 +50,8 @@ def send(Message):   #Envoit de messages dans le Channel
         print("Envoyé : " + Message)
 
 lcd_i2c.main()
-lcd_i2c.Afficher("Connection...")
+log = open("log.txt", "a")
+log.write(time.ctime() + " $ Nouvelle connection")
 crashlog = open("crash.txt", "r")
 print(crashlog.read())
 crashlog.close
@@ -58,7 +61,6 @@ threading.Thread(target=recurrence).start()
 crashlog = open("crash.txt", "w")
 crashlog.write("Wipe au restart, le : "+time.strftime("%c"))
 crashlog.close
-log = open("log.txt", "a")
 
 try:
  while 1:
@@ -102,6 +104,7 @@ try:
 
     if user == "lawry25" and lawry == True:
     	send(Kappa)
+        lcd_i2c.Afficher("Kappa", str(sel))
     	if "stop kappa" in text:
     		lawry = False
     if "reKappa" in text:
@@ -153,6 +156,7 @@ try:
         send("/me Sur demande de @" + user + " votre bot bien aimé s'en vas... au revoir. sckHLT ;) ")
         wiz = 0
         pause = True
+        lcd_i2c.Afficher("Pause du bot", str(sel))
         while not "!bonjour" in text:
             text = ""
             recu = s.recv(2040)
@@ -182,6 +186,7 @@ try:
         send("Le niveau de PJSalt est reglé à " + str(sel))
         if grains > 1000:
         	grains = grains - 50
+        lcd_i2c.Afficher("Sel : "+str(sel))
 
     if "!sel" in text:
         send("Le niveau de PJSalt actuel est de " + str(sel))
@@ -192,6 +197,7 @@ try:
         send("Le niveau de PJSalt est reglé à "+ str(sel))
         if grains > 1000:
             	grains = grains - 50
+        lcd_i2c.Afficher("Sel : "+str(sel))
 
     if (" con " or " merde " or " chiant ") in text:
         sel = sel + 1
@@ -205,6 +211,7 @@ try:
         if grains > 1000:
         	send("c'est le grain de sel de @" + user + " qui fait déborder le vase... sel reinitialisé à 20")
         	sel = 20
+        lcd_i2c.Afficher("Sel : "+str(sel))
 		
     if (" amour " or " aime " or "<3" or "Kappa") in text:
         sel = sel - len(text.split("Kappa"))
@@ -215,6 +222,7 @@ try:
         if grains > 1000:
         	send("c'est le grain de sucre de @" + user + " qui fait déborder le vase... sel reinitialisé à -20")
         	sel = -20
+        lcd_i2c.Afficher("Sel : "+str(sel))
         	
     if "!refresh" in text.split(" ")[0]:
     	FichierQuotes.close
@@ -235,6 +243,7 @@ try:
         send("Quote enregistrée comme quote n°"+str(last+1))
         log.write(time.ctime() + " $ Quote n°"+str(last+1)+" Quote : "+quote)
         print("New quote = "+quote)
+        lcd_i2c.Afficher("New quote:"+quote, str(sel))
         FichierQuotes = open("quotes.txt", "r")
 
 
@@ -245,17 +254,19 @@ except KeyboardInterrupt:
     send("/disconnect")
     print("En attente de la fin du thread recurrence...")
     log.write(time.ctime() + " $ Extinction du Bot: KeyboardInterrupt")
+    lcd_i2c.Afficher("KeyboardInterrupt", "Fin")
     exit()
 
 except Exception, e:
     print(str(e))
-    log.write(time.ctime() + " $ Crash : " + e)
+    log.write(time.ctime() + " $ Crash : " + str(e))
     crashlog = open("crash.txt", "a")
-    crashlog.write(time.strftime("%c")+" : "+e)
+    crashlog.write(time.strftime("%c")+" : "+str(e))
     crashlog.close
     send("Ce robot a crash... Merci d'en informer son créateur... J'AI ENVIE D'ETRE UN BOT SANS BUG !!! Mais je reste quand même, ne vous inquietez pas ;) ")
+    lcd_i2c.Afficher("Bug:"+str(e))
     pass
 
 finally:
     log.close
-    lcd_byte(0x01, LCD_CMD)
+    lcd_i2c.close()
