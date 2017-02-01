@@ -39,6 +39,7 @@ def recurrence():
                     break
 
 def send(Message):   #Envoit de messages dans le Channel
+    log.write(time.ctime() + " $ " + "Le bot envoie : " + Message)
     if "/" in Message.split(" ")[0]:
         s.send("PRIVMSG " + CHANNEL + " :" + Message + "\r\n")     #envoie commande
         print("Commande : " + Message)
@@ -48,15 +49,16 @@ def send(Message):   #Envoit de messages dans le Channel
 
 lcd_i2c.main()
 lcd_i2c.Afficher("Connection...")
-log = open("crash.txt", "r")
-print(log.read())
-log.close
+crashlog = open("crash.txt", "r")
+print(crashlog.read())
+crashlog.close
 connection()
 send("/me Le bot de l'enfer est de retour, cachez vous !!!")
 threading.Thread(target=recurrence).start()
-log = open("crash.txt", "w")
-log.write("Wipe au restart, le : "+time.strftime("%c"))
-log.close
+crashlog = open("crash.txt", "w")
+crashlog.write("Wipe au restart, le : "+time.strftime("%c"))
+crashlog.close
+log = open("log.txt", "a")
 
 try:
  while 1:
@@ -70,6 +72,7 @@ try:
         for i in range(2, len(recu.split(":")), 1):
             text = text + recu.split(":")[i] + ":"
         print(user+" : "+text)      #log
+        log.write(time.ctime() + " $ " + user + " : " + text)
     elif "PING" in recu:        #pong
         rep = recu.split(":")[1]
         s.send("PONG :" + rep + "\r\n")
@@ -230,6 +233,7 @@ try:
         FichierQuotes.write("~#"+quote+"#~"+str(last+1)+"\n")
         FichierQuotes.close
         send("Quote enregistrée comme quote n°"+str(last+1))
+        log.write(time.ctime() + " $ Quote n°"+str(last+1)+" Quote : "+quote)
         print("New quote = "+quote)
         FichierQuotes = open("quotes.txt", "r")
 
@@ -240,15 +244,18 @@ except KeyboardInterrupt:
     send("Votre bot bot préféré s'en vas sur demande imperative de son maitre suprême... Le bot reviendra potentiellement bientôt ;) sckHLT")
     send("/disconnect")
     print("En attente de la fin du thread recurrence...")
+    log.write(time.ctime() + " $ Extinction du Bot: KeyboardInterrupt")
     exit()
 
 except Exception, e:
     print(str(e))
-    log = open("crash.txt", "a")
-    log.write(time.strftime("%c")+" : "+e)
-    log.close
+    log.write(time.ctime() + " $ Crash : " + e)
+    crashlog = open("crash.txt", "a")
+    crashlog.write(time.strftime("%c")+" : "+e)
+    crashlog.close
     send("Ce robot a crash... Merci d'en informer son créateur... J'AI ENVIE D'ETRE UN BOT SANS BUG !!! Mais je reste quand même, ne vous inquietez pas ;) ")
     pass
 
 finally:
+    log.close
     lcd_byte(0x01, LCD_CMD)
