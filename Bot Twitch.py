@@ -28,9 +28,13 @@ def connection():  #Connection au serveur + channel
     print("joining channel " + CHANNEL)
     s.send("JOIN " + CHANNEL + "\r\n")
     print("Connected")
-    lcd_i2c.Afficher("Connecté")
+    lcd_i2c.Afficher("Connected", sel)
 
+def log(LOG):
+    logfile.write(time.ctime() + " $ " + LOG + " \r\n")
+    
 def recurrence():
+ try:
     while stop == 0:
         time.sleep(1)
         while pause == 0 and stop == 0:
@@ -39,9 +43,13 @@ def recurrence():
                 time.sleep(5)
                 if pause == 1 or stop == 1:
                     break
+    exit()
+ except Exception, e:
+    print(str(e))
+    log( "/!\\ recurence : " + str(e) + "/!\\")
 
 def send(Message):   #Envoit de messages dans le Channel
-    log.write(time.ctime() + " $ " + "Le bot envoie : " + Message)
+    log("Le bot envoie : " + Message)
     if "/" in Message.split(" ")[0]:
         s.send("PRIVMSG " + CHANNEL + " :" + Message + "\r\n")     #envoie commande
         print("Commande : " + Message)
@@ -50,8 +58,8 @@ def send(Message):   #Envoit de messages dans le Channel
         print("Envoyé : " + Message)
 
 lcd_i2c.main()
-log = open("log.txt", "a")
-log.write(time.ctime() + " $ Nouvelle connection")
+logfile = open("log.txt", "a")
+logfile.write(time.ctime() + " $ "+ "Nouvelle connexion \r\n")
 crashlog = open("crash.txt", "r")
 print(crashlog.read())
 crashlog.close
@@ -74,11 +82,13 @@ try:
         for i in range(2, len(recu.split(":")), 1):
             text = text + recu.split(":")[i] + ":"
         print(user+" : "+text)      #log
-        log.write(time.ctime() + " $ " + user + " : " + text)
+        log(user + " : " + text)
     elif "PING" in recu:        #pong
         rep = recu.split(":")[1]
         s.send("PONG :" + rep + "\r\n")
         print("Ping")
+        stop = False
+        pause = False
 
             ###______Commandes______###
 
@@ -104,7 +114,7 @@ try:
 
     if user == "lawry25" and lawry == True:
     	send(Kappa)
-        lcd_i2c.Afficher("Kappa", str(sel))
+        lcd_i2c.Afficher("Kappa  " + str(sel), "Vive mistercraft")
     	if "stop kappa" in text:
     		lawry = False
     if "reKappa" in text:
@@ -186,10 +196,11 @@ try:
         send("Le niveau de PJSalt est reglé à " + str(sel))
         if grains > 1000:
         	grains = grains - 50
-        lcd_i2c.Afficher("Sel : "+str(sel))
+        lcd_i2c.AfficherLine("Sel: "+str(sel), "Vive mistercraft")
 
     if "!sel" in text:
         send("Le niveau de PJSalt actuel est de " + str(sel))
+        lcd_i2c.AfficherLine("Sel: "+str(sel), "Vive mistercraft")
 
     if ("!sucre" or "!sucré" or "!sucrer") in text:
         sel = sel-50
@@ -197,7 +208,7 @@ try:
         send("Le niveau de PJSalt est reglé à "+ str(sel))
         if grains > 1000:
             	grains = grains - 50
-        lcd_i2c.Afficher("Sel : "+str(sel))
+        lcd_i2c.AfficherLine("Sel: "+str(sel), "Vive mistercraft")
 
     if (" con " or " merde " or " chiant ") in text:
         sel = sel + 1
@@ -211,7 +222,7 @@ try:
         if grains > 1000:
         	send("c'est le grain de sel de @" + user + " qui fait déborder le vase... sel reinitialisé à 20")
         	sel = 20
-        lcd_i2c.Afficher("Sel : "+str(sel))
+        lcd_i2c.AfficherLine("Sel: "+str(sel), "Vive mistercraft")
 		
     if (" amour " or " aime " or "<3" or "Kappa") in text:
         sel = sel - len(text.split("Kappa"))
@@ -222,7 +233,7 @@ try:
         if grains > 1000:
         	send("c'est le grain de sucre de @" + user + " qui fait déborder le vase... sel reinitialisé à -20")
         	sel = -20
-        lcd_i2c.Afficher("Sel : "+str(sel))
+        lcd_i2c.AfficherLine("Sel: "+str(sel), "Vive mistercraft")
         	
     if "!refresh" in text.split(" ")[0]:
     	FichierQuotes.close
@@ -241,11 +252,13 @@ try:
         FichierQuotes.write("~#"+quote+"#~"+str(last+1)+"\n")
         FichierQuotes.close
         send("Quote enregistrée comme quote n°"+str(last+1))
-        log.write(time.ctime() + " $ Quote n°"+str(last+1)+" Quote : "+quote)
+        log("Quote n°"+str(last+1)+" Quote : "+quote)
         print("New quote = "+quote)
-        lcd_i2c.Afficher("New quote:"+quote, str(sel))
+        lcd_i2c.AfficherLine("New quote:"+quote[:18], "...")
         FichierQuotes = open("quotes.txt", "r")
 
+    if "!demo" in text:
+        lcd_i2c.AfficherLine("Vive mistercraft", "presque Kappa")
 
 except KeyboardInterrupt:
     stop = True
@@ -253,20 +266,24 @@ except KeyboardInterrupt:
     send("Votre bot bot préféré s'en vas sur demande imperative de son maitre suprême... Le bot reviendra potentiellement bientôt ;) sckHLT")
     send("/disconnect")
     print("En attente de la fin du thread recurrence...")
-    log.write(time.ctime() + " $ Extinction du Bot: KeyboardInterrupt")
+    log("Extinction du Bot: KeyboardInterrupt \r\n")
     lcd_i2c.Afficher("KeyboardInterrupt", "Fin")
-    exit()
 
 except Exception, e:
     print(str(e))
-    log.write(time.ctime() + " $ Crash : " + str(e))
+    log(time.ctime() + " $ "+ "Crash : " + str(e))
     crashlog = open("crash.txt", "a")
     crashlog.write(time.strftime("%c")+" : "+str(e))
     crashlog.close
-    send("Ce robot a crash... Merci d'en informer son créateur... J'AI ENVIE D'ETRE UN BOT SANS BUG !!! Mais je reste quand même, ne vous inquietez pas ;) ")
+    log(e)
+    send("Ce robot a crash... Merci d'en informer son créateur... J'AI ENVIE D'ETRE UN BOT SANS BUG !!!")
     lcd_i2c.Afficher("Bug:"+str(e))
+    stop = True
+    pause = True
     pass
 
 finally:
+    log("Fin de l'execution/fin du log \r\n \n")
     log.close
+    time.sleep(5)
     lcd_i2c.close()

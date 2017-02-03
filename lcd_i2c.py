@@ -123,6 +123,10 @@ def Afficher(text, sel=SEL):
     lcd_string(text[16:28]+" "+str(sel),LCD_LINE_2)
     SEL = sel
 
+def AfficherLine(line1=" ", line2=" "):
+    lcd_string(line1[:16],LCD_LINE_1)
+    lcd_string(line2[:16],LCD_LINE_2)
+
 if __name__ == '__main__':
 
   try:
