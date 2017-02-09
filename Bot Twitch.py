@@ -110,6 +110,7 @@ channelInfo()
 try:
  while 1:
 
+
     #print(user+str(modos))
     #print(user in modos)
     text = ""
