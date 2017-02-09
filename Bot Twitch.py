@@ -110,7 +110,6 @@ channelInfo()
 try:
  while 1:
 
-
     #print(user+str(modos))
     #print(user in modos)
     text = ""
@@ -210,7 +209,6 @@ try:
             send("Il y a un \"p\" à la fin de \"trop\". @"+user)
         else:
             send("*trop @"+user)
-
 
     if " g etai " in text:
         send("BON DIEU ! Rassure-moi, tu fait expres ? @"+user+" ca me ferai mal au cœur de savoir que quelqu'un aie une telle ignorance de l'existance du beschrelle")
