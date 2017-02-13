@@ -17,6 +17,7 @@ messages = json.load(messagesF)
 messagesF.close()
 quotes = messages[u'quotes']
 recurrenceMessages = messages[u'reccurence']
+dejavu = messages[u'dejavu']
 user = ''
 wiz = 0
 sel = -20
@@ -44,6 +45,13 @@ def connection():  # Connection au serveur + channel
 def log(LOG):
     logfile.write(time.ctime() + " $ " + LOG + " \r\n")
 
+def reloadjson():
+    messagesF = open("messages.json", "w")
+    messagesF.write(json.dumps(messages))
+    messagesF.close
+    messagesF = open("messages.json")
+    messages = json.load(messagesF)
+    messagesF.close()
 
 def channelInfo():
     global users
@@ -61,32 +69,40 @@ def channelInfo():
         chatnb = infos["chatter_count"]
 
     except Exception, e:
-        print("channelInfo : " + e)
+        print("channelInfo : " + str(e))
         pass
 
 
 def newchat():
     try:
         global chatnb
+        global dejavu
         chatlt = 0
         while stop == 0:
             while pause == 0:
+                if chatnb != chatlt:
+                    if chatnb > chatlt:
+                        send("[" + str(chatnb) + " viewers (+" + str(chatnb - chatlt) + ")]")
+                    elif chatnb < chatlt:
+                        send("[" + str(chatnb) + " viewers (" + str(chatnb - chatlt) + ")]")
+                chatlt = chatnb
+                if len(users) > 0:
+                    nouveaux = []
+                    for i in range(0, len(users)-1):
+                        if users[i] not in dejavu:
+                            dejavu.append(users[i])
+                            nouveaux.append(users[i])
+                        else:
+                            pass
+                    if len(nouveaux) > 0:
+                        send("Bienvenue à "+str(nouveaux).split("[")[-1].split("]")[0]+", nouveau(x) sur le chat. Si le stream vous plait, n'hesitez pas a follow la chaine")
+                        for i in range(0, len(nouveaux)-1):
+                            send("/w "+nouveaux[i]+" MrDestructoid : Ce compte est à la fois un bot et une personnes (le bot ecrit toujours en vert, avec MrDestructoid devant le message). Si vous avez une/des suggestion(s) de modification(s)/ajout(s), merci de m'en faire part par chuchotements, ou (si t'es chaud en programmation) sur git-hub.")
+                        reloadjson()
                 for i in range(0, 300, 5):
                     time.sleep(5)
                     if stop != 0 or pause != 0:
                         break
-                if chatnb != chatlt:
-                    if chatnb > chatlt:
-                        send(
-                            "[" + str(chatnb) + " viewers (+" + str(chatnb - chatlt) + ")]")
-                    if random.randint(0, 5) == 3:
-                        send("Bienvenue au(x) nouvel/nouveaux arrivant(s), sachez que ce compte est à la fois un bot, et un modo humain. Certaint peuvent trouver le bot irritant... si c'est votre cas, merci de m'en faire la remarque de maniere civilisé (en chuchotements) et de me suggerer une/des modification(s)")
-                elif chatnb < chatlt:
-                    send(
-                        "[" + str(chatnb) + " viewers (" + str(chatnb - chatlt) + ")]")
-                else:
-                    print("nobody's new... :(")
-                chatlt = chatnb
 
     except Exception, e:
         print("Probleme dans \"newchat\"" + str(e))
@@ -117,7 +133,6 @@ def recurrence():
         print("reccurence: " + str(e))
         log("/!\\ recurence : " + str(e) + "/!\\")
         exit()
-
 
 def send(Message):  # Envoit de messages dans le Channel
     log("Le bot envoie : " + Message)
@@ -196,7 +211,7 @@ try:
                         pass
                     except IndexError, e:
                         send(
-                            "Quote inconnue, tapez !quotes pour connaitre les quotes connues")
+                        "Quote inconnue, tapez !quotes pour connaitre les quotes connues")
                         print(e)
                         pass
 
@@ -374,13 +389,8 @@ try:
             quote = ""
             quote = text.split("!addquote ")[1]
             quote = quote.split("\r\n")[0]
-            quotes.append(quote)
-            messagesF = open("messages.json", "w")
-            messagesF.write(json.dumps(messages))
-            messagesF.close
-            messagesF = open("messages.json")
-            messages = json.load(messagesF)
-            messagesF.close()
+            quotes.append(quote.decode('utf8'))
+            reloadjson()
             send("Quote enregistrée comme quote n°" + str(len(quotes)))
             log("Quote n°" + str(len(quotes)) + " Quote : " + quote)
             print("New quote (n°" + str(len(quotes)) + ") = " + quote)
@@ -427,6 +437,8 @@ except Exception, e:
     pass
 
 finally:
+    stop = True
+    pause = True
     messagesF.close()
     log("Fin de l'execution/fin du log \r\n \n")
     logfile.close
