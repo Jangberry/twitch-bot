@@ -12,12 +12,12 @@ from info import CHANNEL, PASS, NICK
 s = socket.socket()
 
 # Variables pour fonctions
-messagesF = open("messages.json")
-messages = json.load(messagesF)
-messagesF.close()
-quotes = messages[u'quotes']
-recurrenceMessages = messages[u'reccurence']
-dejavu = messages[u'dejavu']
+jsoninfo = open("info.json")
+infojson = json.load(jsoninfo)
+jsoninfo.close()
+quotes = infojson[u'quotes']
+recurrenceMessages = infojson[u'reccurence']
+dejavu = infojson[u'dejavu']
 user = ''
 wiz = 0
 sel = -20
@@ -46,12 +46,12 @@ def log(LOG):
     logfile.write(time.ctime() + " $ " + LOG + " \r\n")
 
 def reloadjson():
-    messagesF = open("messages.json", "w")
-    messagesF.write(json.dumps(messages))
-    messagesF.close
-    messagesF = open("messages.json")
-    messages = json.load(messagesF)
-    messagesF.close()
+    jsoninfo = open("info.json", "w")
+    jsoninfo.write(json.dumps(infojson))
+    jsoninfo.close
+    jsoninfo = open("info.json")
+    infojson = json.load(jsoninfo)
+    jsoninfo.close()
 
 def channelInfo():
     global users
@@ -434,6 +434,6 @@ except Exception, e:
 finally:
     stop = True
     pause = True
-    messagesF.close()
+    jsoninfo.close()
     log("Fin de l'execution/fin du log \r\n \n")
     logfile.close
