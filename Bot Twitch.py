@@ -167,21 +167,23 @@ try:
         user = ""
         recu = s.recv(2040)
         log(recu)
-        if len(recu.split(":")) >= 3:  # séparation user/texte
-            user = recu.split("!")[0]
-            user = user.split(":")[1]
-            for i in range(2, len(recu.split(":")), 1):
-                text = text + recu.split(":")[i] + ":"
-            print(user + " : " + text)  # log
 
-        elif "PING" in recu:  # pong
+        if "PING" in recu:  # pong
             rep = recu.split(":")[1]
             s.send("PONG :" + rep + "\r\n")
-            print("Ping")
             stop = False
             pause = False
-        elif "RECONNECT" in text:
+
+        elif len(recu.split(":")) >= 3 and "PRIVMSG" in recu:  # séparation user/texte
+            user = recu.split("!")[0]
+            user = user.split(":")[1]
+            text = str(recu.split("PRIVMSG "+CHANNEL+" :")[1])
+            print(user + " : " + text)  # log
+    
+        elif "RECONNECT" in recu:
             connection()
+        else:
+            print("Recu :"+recu)
 
             ###______Commandes______###
 
@@ -381,9 +383,7 @@ try:
             lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
 
         if "!refresh" in text.split(" ")[0]:
-            messagesF = open("messages.json")
-            messages = json.load(messagesF)
-            messagesF.close()
+            reloadjson()
 
         if "!addquote" in text.split(" ")[0] and len(text.split(" ")) > 1:
             quote = ""
@@ -401,17 +401,12 @@ try:
                 pass
             else:
                 channelInfo()
-                send("Tirage au sort d'un personne à timeout parmis les " +
-                     str(chatnb) + " personnes presentes dans le chat...")
+                send("Tirage au sort d'un personne à timeout parmis les " + str(chatnb) + " personnes presentes dans le chat...")
                 to = users[random.randint(0, len(users) - 1)]
-                send(
-                    to + " a été tiré au sort pour un to de 100 secondes. Un dernier mot ? tu as 10 secondes...")
+                send(to + " a été tiré au sort pour un to de 100 secondes. Un dernier mot ? tu as 10 secondes...")
                 time.sleep(10)
                 send("/timeout " + to + " 100")
                 send("Au plaisir @" + to)
-
-        if "!demo" in text:
-            lcd_i2c.AfficherLine("Vive mistercraft", "presque Kappa")
 
 except KeyboardInterrupt:
     stop = True
@@ -425,7 +420,7 @@ except KeyboardInterrupt:
 except Exception, e:
     print(str(e))
     log(time.ctime() + " $ " + "Crash : " + str(e))
-    send("Ce robot a crash... Merci d'en informer son créateur... J'AI ENVIE D'ETRE UN BOT SANS BUG !!! Erreur :" + str(e))
+    send("Ce robot a crash... Merci d'en informer son créateur... J'AI ENVIE D'ETRE UN BOT SANS BUG !!! Erreur : " + str(e))
     send("/disconnect")
     crashlog = open("crash.txt", "a")
     crashlog.write(time.strftime("%c") + " : " + str(e))

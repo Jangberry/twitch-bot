@@ -2,3 +2,4 @@ info.*
 log.txt
 crash.txt
 *.pyc
+/.vs/twitch-bot/v14
