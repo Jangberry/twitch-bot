@@ -12,9 +12,10 @@ from info import CHANNEL, PASS, NICK
 s = socket.socket()
 
 # Variables pour fonctions
-jsoninfo = open("info.json")
+jsoninfo = open("info.json", "r")
 infojson = json.load(jsoninfo)
 jsoninfo.close()
+del jsoninfo
 quotes = infojson[u'quotes']
 recurrenceMessages = infojson[u'reccurence']
 dejavu = infojson[u'dejavu']
@@ -45,26 +46,37 @@ def connection():  # Connection au serveur + channel
 def log(LOG):
     logfile.write(time.ctime() + " $ " + LOG + " \r\n")
 
-def reloadjson():
+def savejson():
+    global infojson
     jsoninfo = open("info.json", "w")
     jsoninfo.write(json.dumps(infojson))
     jsoninfo.close
-    jsoninfo = open("info.json")
+    jsoninfo = open("info.json", "r")
     infojson = json.load(jsoninfo)
     jsoninfo.close()
+
+def refreshjson():
+    global infojson
+    global quotes
+    global recurrenceMessages
+    global dejavu
+    jsoninfo = open("info.json", "r")
+    infojson = json.load(jsoninfo)
+    jsoninfo.close()
+    quotes = infojson[u'quotes']
+    recurrenceMessages = infojson[u'reccurence']
+    dejavu = infojson[u'dejavu']
 
 def channelInfo():
     global users
     global modos
     global chatnb
     try:
-        infos = urllib.urlopen(
-            "https://tmi.twitch.tv/group/user/" + CHANNEL.split("#")[1] + "/chatters")
+        infos = urllib.urlopen("https://tmi.twitch.tv/group/user/" + CHANNEL.split("#")[1] + "/chatters")
         infos = json.loads(infos.read())
         users = infos["chatters"]["viewers"]
         # print(str(users))
-        modos = infos["chatters"]["moderators"] + infos["chatters"]["global_mods"] + \
-            infos["chatters"]["staff"] + infos["chatters"]["admins"]
+        modos = infos["chatters"]["moderators"] + infos["chatters"]["global_mods"] + infos["chatters"]["staff"] + infos["chatters"]["admins"]
         # print(str(modos))
         chatnb = infos["chatter_count"]
 
@@ -90,15 +102,15 @@ def newchat():
                     nouveaux = []
                     for i in range(0, len(users)-1):
                         if users[i] not in dejavu:
-                            dejavu.append(users[i])
+                            dejavu.append(users[i].decode("utf8"))
                             nouveaux.append(users[i])
                         else:
-                            pass
+                            sleep(0.001)
+                    print(str(nouveaux))
                     if len(nouveaux) > 0:
                         send("Bienvenue à "+str(nouveaux).split("[")[-1].split("]")[0]+", nouveau(x) sur le chat. Si le stream vous plait, n'hesitez pas a follow la chaine")
                         for i in range(0, len(nouveaux)-1):
-                            send("/w "+nouveaux[i]+" MrDestructoid : Ce compte est à la fois un bot et une personnes (le bot ecrit toujours en vert, avec MrDestructoid devant le message). Si vous avez une/des suggestion(s) de modification(s)/ajout(s), merci de m'en faire part par chuchotements, ou (si t'es chaud en programmation) sur git-hub.")
-                        reloadjson()
+                            savejson()
                 for i in range(0, 300, 5):
                     time.sleep(5)
                     if stop != 0 or pause != 0:
@@ -177,7 +189,7 @@ try:
         elif len(recu.split(":")) >= 3 and "PRIVMSG" in recu:  # séparation user/texte
             user = recu.split("!")[0]
             user = user.split(":")[1]
-            text = str(recu.split("PRIVMSG "+CHANNEL+" :")[1])
+            text = recu.split("PRIVMSG "+CHANNEL+" :")[1].split("\r\n")[0]
             print(user + " : " + text)  # log
     
         elif "RECONNECT" in recu:
@@ -195,7 +207,7 @@ try:
             if "s" in quote:
                 quotesstr = ""
                 for i in range(0, len(quotes) - 1):
-                    quotesstr = quotesstr + "\", " + str(i)+ " :\"" + quotes[i].encode("utf8")
+                    quotesstr = quotesstr + " " + str(i)+ " :\"" + quotes[i].encode("utf8") + "\""
                 send("Voici les quotes, pour en citer une, merci d'indiquer son numero : " + quotesstr)
                 pass
             else:
@@ -383,14 +395,14 @@ try:
             lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
 
         if "!refresh" in text.split(" ")[0]:
-            reloadjson()
+            refreshjson()
 
         if "!addquote" in text.split(" ")[0] and len(text.split(" ")) > 1:
             quote = ""
             quote = text.split("!addquote ")[1]
-            quote = quote.split("\r\n")[0]
+            global quotes
             quotes.append(quote.decode('utf8'))
-            reloadjson()
+            savejson()
             send("Quote enregistrée comme quote n°" + str(len(quotes)))
             log("Quote n°" + str(len(quotes)) + " Quote : " + quote)
             print("New quote (n°" + str(len(quotes)) + ") = " + quote)
@@ -434,6 +446,5 @@ except Exception, e:
 finally:
     stop = True
     pause = True
-    jsoninfo.close()
     log("Fin de l'execution/fin du log \r\n \n")
     logfile.close
