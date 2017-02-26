@@ -1,3 +1,4 @@
+#-*- coding: utf-8 -*-
 #!/usr/bin/python
 #--------------------------------------
 #    ___  ___  _ ____
@@ -91,29 +92,36 @@ def close():
   lcd_byte(0x01, LCD_CMD)
 
 def lcd_toggle_enable(bits):
+ try:
   # Toggle enable
   time.sleep(E_DELAY)
   bus.write_byte(I2C_ADDR, (bits | ENABLE))
   time.sleep(E_PULSE)
   bus.write_byte(I2C_ADDR,(bits & ~ENABLE))
   time.sleep(E_DELAY)
+ except Exception:
+  pass
 
 def lcd_string(message,line):
   # Send string to display
-
+ try:
   message = message.ljust(LCD_WIDTH," ")
 
   lcd_byte(line, LCD_CMD)
 
   for i in range(LCD_WIDTH):
     lcd_byte(ord(message[i]),LCD_CHR)
+ except Exception:
+  pass
 
 def main():
   # Main program block
-
+  try:
   # Initialise display
-  lcd_init()
-
+  	lcd_init()
+  except Exception, e:
+	print('Erreur : aucun ecran détecté.')
+	print('Erreur : '+str(e))
 
 
 SEL="?"
