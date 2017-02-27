@@ -1,40 +1,25 @@
 #-*- coding: utf-8 -*-
-def main():
-    import socket
-    import sys
-    import time
-    import threading
-    import random
-    import urllib
-    import json
-    import lcd_i2c
-    from info import CHANNEL, PASS, NICK
-    
-    s = socket.socket()
-    
-    # Variables pour fonctions
-    jsoninfo = open("info.json", "r")
-    infojson = json.load(jsoninfo)
-    jsoninfo.close()
-    del jsoninfo
-    quotes = infojson[u'quotes']
-    recurrenceMessages = infojson[u'reccurence']
-    dejavu = infojson[u'dejavu']
-    user = ''
-    wiz = 0
-    sel = -20
-    grains = 0
-    pause = False
-    stop = False
-    chatnb = 0
-    users = []
-    modos = []
-    
-    
-    def connection():  # Connection au serveur + channel
+import socket
+import sys
+import time
+import threading
+import random
+import urllib
+import json
+import importlib
+import lcd_i2c
+from info import CHANNEL, PASS, NICK
+
+global lol
+s = socket.socket()
+
+def connection():  # Connection au serveur + channel
         lcd_i2c.Afficher("Connexion...")
         print("connecting...")
-        s.connect(("irc.chat.twitch.tv", 6667))
+        try:
+            s.connect(("irc.chat.twitch.tv", 6667))
+        except Exception:
+            pass
         print("identifing with nickname: " + NICK)
         s.send("PASS " + PASS + "\r\n")
         s.send("NICK " + NICK + "\r\n")
@@ -44,17 +29,19 @@ def main():
         lcd_i2c.Afficher("Connected", sel)
     
     
-    def log(LOG):
+def log(LOG):
         try:
             logfile.write(time.ctime() + " $ " + LOG + " \r\n")
+        except UnboundLocalError:
+            pass
         except Exception, e:
+            print('e')
             lcd_i2c.Afficher("Reprise log")
-            print(str(e))
             logfile.close
-            logfile = open("log2.txt", "a")
+            logfile = open("log.txt", "w")
             logfile.write(time.ctime() + " $ Reprise du log: " + LOG +" \r\n")
     
-    def savejson():
+def savejson():
         global infojson
         jsoninfo = open("info.json", "w")
         jsoninfo.write(json.dumps(infojson))
@@ -63,7 +50,7 @@ def main():
         infojson = json.load(jsoninfo)
         jsoninfo.close()
     
-    def refreshjson():
+def refreshjson():
         global infojson
         global quotes
         global recurrenceMessages
@@ -75,7 +62,7 @@ def main():
         recurrenceMessages = infojson[u'reccurence']
         dejavu = infojson[u'dejavu']
     
-    def channelInfo():
+def channelInfo():
         global users
         global modos
         global chatnb
@@ -95,7 +82,7 @@ def main():
             pass
     
     
-    def newchat():
+def newchat():
         try:
             global chatnb
             global dejavu
@@ -125,13 +112,13 @@ def main():
                         time.sleep(5)
                         if stop != 0 or pause != 0:
                             break
-    
+            exit()
         except Exception, e:
             print("Probleme dans \"newchat\"" + str(e))
             pass
     
     
-    def recurrence():
+def recurrence():
         try:
             while stop == 0:
                 time.sleep(1)
@@ -140,18 +127,23 @@ def main():
                     for i in range(0, 1300, 10):
                         if pause == 1 or stop == 1:
                             break
-                        time.sleep(5)
-                        channelInfo()
+                        else:    
+                            try:
+                                channelInfo()
+                            except TypeError:
+                                pass
                         if pause == 1 or stop == 1:
                             break
-                        time.sleep(5)
+                        time.sleep(4)
+                        if pause == 1 or stop == 1:
+                            break
+                        time.sleep(4)
             exit()
         except Exception, e:
             print("reccurence: " + str(e))
-            log("/!\\ recurence : " + str(e) + "/!\\")
             exit()
     
-    def send(Message):  # Envoit de messages dans le Channel
+def send(Message):  # Envoit de messages dans le Channel
         log("Le bot envoie : " + Message)
         if "/" in Message.split(" ")[0]:
             s.send("PRIVMSG " + CHANNEL + " :" + Message + "\r\n")  # envoie commande
@@ -159,7 +151,26 @@ def main():
         else:
             s.send("PRIVMSG " + CHANNEL + " :/me _ MrDestructoid : " + Message + "\r\n")  # envoie message
             print("Envoyé : " + Message)
-    
+
+if 1:
+     # Variables pour fonctions
+    jsoninfo = open("info.json", "r")
+    infojson = json.load(jsoninfo)
+    jsoninfo.close()
+    del jsoninfo
+    quotes = infojson[u'quotes']
+    recurrenceMessages = infojson[u'reccurence']
+    dejavu = infojson[u'dejavu']
+    user = ''
+    wiz = 0
+    sel = -20
+    grains = 0
+    pause = False
+    stop = False
+    chatnb = 0
+    users = []
+    modos = []
+
     lcd_i2c.main()
     logfile = open("log.txt", "a")
     logfile.write(time.ctime() + " $ " + "Nouvelle connexion \r\n")
@@ -174,6 +185,7 @@ def main():
     crashlog.close
     channelInfo()
     
+    arret = False
     try:
         while 1:
     
@@ -195,7 +207,7 @@ def main():
                 print(user + " : " + text)  # log
         
             elif "RECONNECT" in recu:
-                connection()
+                1/0
             else:
                 print("Recu :"+recu)
     
@@ -263,13 +275,20 @@ def main():
                         "On n'écrit pas \"t\" quand on parle francais... on écrit \"t'es\", \"thé\" ou \"tes\" @" + user)
                 else:
                     send("*\"t'es\" ou \"tes\" @" + user)
-    
+
             if " g " in text and sel < 20:
                 if sel < 1:
                     send(
                         "On dis pas \"g\" quand on parle francais, on ecrit \"j'ai\" @" + user)
                 else:
                     send("*j'ai @" + user)
+
+            if " chai pas " in text and sel < 20:
+                if sel < 1:
+                    send(
+                        "Le savais-tu: souvent, on n'utilise pas le meme language à l'ecrit et a l'oral. C'est pour ca que je t'encourage à érire \"je ne sais pas\" au lieu de \"chai pas\" (en plus ca fait un peu plus eduqué) @" + user)
+                else:
+                    send("*je ne sais pas @" + user)
     
             if " etai " in text and sel < 20:
                 if sel < 1:
@@ -429,9 +448,15 @@ def main():
         pause = True
         send("/disconnect")
         print("En attente de la fin des threads...")
+        for i in range(0, 5):
+            time.sleep(1)
+            print('.')
         log("Extinction du Bot: KeyboardInterrupt \r\n")
-        lcd_i2c.Afficher("KeyboardInterrupt", "Fin")
+        lcd_i2c.Afficher("KeyboardInterrupt", "fin")
     
+    except DivisionByZero:
+        pass
+
     except Exception, e:
         print(str(e))
         log(time.ctime() + " $ " + "Crash : " + str(e))
@@ -444,11 +469,15 @@ def main():
         lcd_i2c.Afficher("Bug:" + str(e))
         stop = True
         pause = True
-        pass
-    
+        arret = True
+
     finally:
+        global lol
         stop = True
         pause = True
         log("Fin de l'execution/fin du log \r\n \n")
         logfile.close
-                                                                    
+        if arret:
+            exit()
+        else:
+            lol = 1

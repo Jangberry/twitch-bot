@@ -1,15 +1,16 @@
 #-*- coding: utf-8 -*-
-from Bot_Twitch import main
-from threading import Timer
+import Bot_Twitch
+import importlib
+import time
 
-continuer=True
-while continuer==1:
-    main()
-    t = Timer(10, print, ['Reprise...'])
-    t.start()
-    arret = input('Arreter ? (O/N) Reprise si reponse absente dans 10 sec')
-    t.cancel()
-    if 'o' in arret or 'O' in arret:
-        continuer=False
-    else:
-        continuer = True
+lol = True
+
+while lol:
+    try:
+        Bot_Twitch()
+    except TypeError:
+        pass
+    print('Redemarrage du bot...')
+    time.sleep(5)
+    reload(Bot_Twitch)
+    time.sleep(3)
