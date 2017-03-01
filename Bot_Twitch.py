@@ -94,25 +94,23 @@ def newchat():
                             send("[" + str(chatnb) + " viewers (+" + str(chatnb - chatlt) + ")]")
                         elif chatnb < chatlt:
                             send("[" + str(chatnb) + " viewers (" + str(chatnb - chatlt) + ")]")
+                        else:
+                            send("[" + str(chatnb)+" viewers (=)]")
                     chatlt = chatnb
-                    if len(users) > 0:
-                        nouveaux = []
-                        for i in range(0, len(users)-1):
-                            if users[i] not in dejavu:
-                                dejavu.append(users[i].decode("utf8"))
-                                nouveaux.append(users[i])
-                            else:
-                                sleep(0.001)
-                        print(str(nouveaux))
-                        if len(nouveaux) > 0:
-                            send("Bienvenue à "+str(nouveaux).split("[")[-1].split("]")[0]+", nouveau(x) sur le chat. Si le stream vous plait, n'hesitez pas a follow la chaine")
-                            for i in range(0, len(nouveaux)-1):
-                                savejson()
+                    tempnew = []
+                    for i in users:
+                        if not i in dejavu:
+                            dejavu.append(i)
+                            tempnew.append(i)
+                            send("/w "+i+" Bienvenue sur le stream d'elemzje. N'hesite pas à follow la chaine si ça te plait :) Sache aussi que ce compte est à la fois un bot et un humain, tu pourra distinguer le bot dans le chat par son ecriture verte ;) D'ailleur, si tu as des suggestions d'ameliorations/modifications du bot, merci de m'en faire part via les chuchottements twitch ou, si tu est un peu callé en programmation (python), via git-hub (\"!git\" dans le chat).")
+                            send("/w "+i+" desole si tu n'est pas nouveau sur le stream, mais sache que tu ne recevera ce message q'une seule fois, il faut du temps au bot pour ettoffer la base de données :)")
+                    if len(tempnew) > 0:
+                        send("Bienvenue à "+", ".join(tempnew)+", nouveau(x) sur le chat.")
+                        savejson
                     for i in range(0, 300, 5):
                         time.sleep(5)
                         if stop != 0 or pause != 0:
                             break
-            exit()
         except Exception, e:
             print("Probleme dans \"newchat\"" + str(e))
             pass
@@ -259,49 +257,46 @@ if 1:
     
             if " c " in text and not ("ctrl" in text or "ctl" in text or "contr" in text) and sel < 20:
                 if sel < 1:
-                    send("On n'écrit pas \"c\" quand on parle français... on écrit \"c\'est\", \"ces\", \"ses\" ou encore \"sait\" @" + user)
+                    send("Evite d'ecrire \"c\"... Ce serait plus agreable que tu ecrive \"c\'est\", \"ces\", \"ses\" ou encore \"sait\" @" + user)
                 else:
                     send("*\"c'est\" ou \"ces\" @" + user)
     
             if " pa " in text and sel < 20:
                 if sel < 1:
-                    send("On met un \"s\" à la fin de \"pas\" @" + user)
+                    send("Met un \"s\" à la fin de \"pas\" STP @" + user+" c'est plus agréable ;)")
                 else:
                     send("*pas @" + user)
     
             if " t " in text and sel < 20:
                 if sel < 1:
-                    send(
-                        "On n'écrit pas \"t\" quand on parle francais... on écrit \"t'es\", \"thé\" ou \"tes\" @" + user)
+                    send("Peut-tu ecrire \"t'es\", \"thé\" ( Kappa ) ou \"tes\" ? Ce serait plus agreable @" + user)
                 else:
                     send("*\"t'es\" ou \"tes\" @" + user)
 
             if " g " in text and sel < 20:
                 if sel < 1:
-                    send(
-                        "On dis pas \"g\" quand on parle francais, on ecrit \"j'ai\" @" + user)
+                    send("Peut-tu ecrie \"j'ai\" en pleines lettres, c'est plsu joli :) @" + user)
                 else:
                     send("*j'ai @" + user)
 
-            if " chai pas " in text and sel < 20:
+            if " chai pa" in text and sel < 20:
                 if sel < 1:
-                    send(
-                        "Le savais-tu: souvent, on n'utilise pas le meme language à l'ecrit et a l'oral. C'est pour ca que je t'encourage à érire \"je ne sais pas\" au lieu de \"chai pas\" (en plus ca fait un peu plus eduqué) @" + user)
+                    send("Je t'encourage à érire \"je ne sais pas\" ou \"je sais pas\" au lieu de \"chai pas\", en plus d'etre plus joli, ca fait mine d'etre plus eduqué @" + user)
                 else:
                     send("*je ne sais pas @" + user)
     
             if " etai " in text and sel < 20:
                 if sel < 1:
-                    send("À l'imparfait, le verbe \"être\" se conjugue \"étais\" à la premiere et à la seconde personne du singulier et \"etait\" à la troisieme personne. Apres si tu voulais mettre une personne du pluriel, t'es mal barré, car meme en phonetique ca ne s'ecrit pas comme ca... Sinon, son participe passé s'ecrit \"été\", comme la saison, mais je ne viendrai pas te faire chier si tu oublie les accents ;) @" + user)
+                    send("Peut-tu rajouter le \"s\" ou le \"t\" à la fin de \"étai\" ? ( petit rappel au cas où:  Le \"s\" c'est pour la premiere et deuxieme personne du singulier (je/tu) et le \"t\" pour la troisieme personne (il/elle/on)) @" + user)
                 else:
                     send("*étais ou était @" + user)
     
             if " bi1 " in text and sel < 20:
                 if sel < 1:
-                    send("Serieux ? Le langage sms c'est pour les claviers T9... pas azerty, et sauf information contraire, tu ne regarde pas le stream sur un 3310 @" + user)
+                    send("Franchement ? Prend l'habitude d'ecrire correctement... \"bi1\" c'est optimisé pour les claviers T9, pas azerty, et sauf erreur, le 3310 n'est pas compatible avec twitch... Desolé pour la violence, mais ça m'insupporte... @" + user)
                 else:
                     send("*bien @" + user)
-    
+   
             if " tro " in text and sel < 20:
                 if sel < 1:
                     send("Il y a un \"p\" à la fin de \"trop\". @" + user)
@@ -313,7 +308,7 @@ if 1:
     
             if " ct " in text and sel < 20:
                 if sel < 1:
-                    send("Mouaif... j'ai vus mieux en terme d'orthographe... tu sais ce n'est pas si long de taper \"c'était\" en toutes lettre, ca t'entraines même à la dyctalographie... tres utile de nos temps, crois-moi @" + user)
+                    send("Tu peux t'appliquer s'il te plait ? C'est pas non plus super long d'ecrire \"c'était\" en toutes lettres, et c'est beaucoup plus agreable pour les personnes qui te lisent... Cependant, si tu ecrivais sur un clavier T9, je te pardonnerais... mais bon, Twitch n'existe pas sur 3310... @" + user)
                 else:
                     send("*c'était @" + user)
     
@@ -431,7 +426,7 @@ if 1:
                 print("New quote (n°" + str(len(quotes)) + ") = " + quote)
                 lcd_i2c.AfficherLine("New quote:" + quote[:6], quote[6:] + "...")
     
-            if "!tauhazard" in text:
+            if "!tauhazard" in text.split(" ")[0]:
                 if len(users) == 0:
                     pass
                 else:
@@ -442,11 +437,15 @@ if 1:
                     time.sleep(10)
                     send("/timeout " + to + " 100")
                     send("Au plaisir @" + to)
+
+            if "!git" in text.split(" ")[0]:
+                send("Voici le lien du git-hub du code du bot, ce dernier est mis a jour environ une a deux fois par semaine, suivant ce que je peux lui apporter: https://github.com/Mistercraft38/twitch-bot")
     
     except KeyboardInterrupt:
         stop = True
         pause = True
         send("/disconnect")
+        savejson
         print("En attente de la fin des threads...")
         for i in range(0, 5):
             time.sleep(1)
@@ -455,6 +454,7 @@ if 1:
         lcd_i2c.Afficher("KeyboardInterrupt", "fin")
     
     except DivisionByZero:
+        savejson
         pass
 
     except Exception, e:
@@ -462,6 +462,7 @@ if 1:
         log(time.ctime() + " $ " + "Crash : " + str(e))
         send("Ce robot a crash... Merci d'en informer son créateur... J'AI ENVIE D'ETRE UN BOT SANS BUG !!! Erreur : " + str(e))
         send("/disconnect")
+        savejson
         crashlog = open("crash.txt", "a")
         crashlog.write(time.strftime("%c") + " : " + str(e))
         crashlog.close
@@ -477,7 +478,3 @@ if 1:
         pause = True
         log("Fin de l'execution/fin du log \r\n \n")
         logfile.close
-        if arret:
-            exit()
-        else:
-            lol = 1
