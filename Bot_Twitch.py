@@ -135,9 +135,9 @@ def newchat():
                       for i in users:
                         if not i.encode("utf8") in dejavu:
                             dejavu.append(i.decode("utf8"))
-                            tempnew.append(i)
-                            send("/w "+i+" Bienvenue sur le stream d'elemzje. N'hesite pas à follow la chaine si ça te plait :) Sache aussi que ce compte est à la fois un bot et un humain ;) Je suis ouvert a toutes modifications sur le bot, propose moi ce qui te passes par la tete ;)")
-                            time.sleep(0.3)
+                            tempnew.append(i.encode("utf8"))
+                            #send("/w "+i.encode("utf8")+" Bienvenue sur le stream d'elemzje. N'hesite pas à follow la chaine si ça te plait :) Sache aussi que ce compte est à la fois un bot et un humain ;) Je suis ouvert a toutes modifications sur le bot, propose moi ce qui te passes par la tete ;)")
+                            #time.sleep(0.3)
                     if len(tempnew) > 0:
                         send("Bienvenue à "+", ".join(tempnew)+", nouveau(x) sur le chat.")
                         savejson
