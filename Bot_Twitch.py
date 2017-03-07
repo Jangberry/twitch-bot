@@ -115,7 +115,7 @@ def newstreaminfo():
                 time.sleep(5)
 
 def newchat():
-        try:
+        #try:
             global chatnb
             global dejavu
             chatlt = 0
@@ -136,7 +136,8 @@ def newchat():
                         if not i.encode("utf8") in dejavu:
                             dejavu.append(i.decode("utf8"))
                             tempnew.append(i)
-                            send("/w "+i+" Bienvenue sur le stream d'elemzje. N'hesite pas à follow la chaine si ça te plait :) Sache aussi que ce compte est à la fois un bot et un humain, tu pourra distinguer le bot dans le chat par son ecriture verte ;) D'ailleur, si tu as des suggestions d'ameliorations/modifications du bot, merci de m'en faire part via les chuchottements twitch ou, si tu est un peu callé en programmation (python), via git-hub (\"!git\" dans le chat).")
+                            send("/w "+i+" Bienvenue sur le stream d'elemzje. N'hesite pas à follow la chaine si ça te plait :) Sache aussi que ce compte est à la fois un bot et un humain ;) Je suis ouvert a toutes modifications sur le bot, propose moi ce qui te passes par la tete ;)")
+                            time.sleep(0.3)
                     if len(tempnew) > 0:
                         send("Bienvenue à "+", ".join(tempnew)+", nouveau(x) sur le chat.")
                         savejson
@@ -144,9 +145,9 @@ def newchat():
                         time.sleep(5)
                         if stop != 0 or pause != 0:
                             break
-        except Exception, e:
-            print("Probleme dans \"newchat\"" + str(e))
-            pass
+        #except Exception, e:
+        #    print("Probleme dans \"newchat\"" + str(e))
+        #    pass
 
 def recurrence():
         try:
