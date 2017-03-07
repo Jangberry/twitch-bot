@@ -4,13 +4,12 @@ import sys
 import time
 import threading
 import random
-import urllib
+import requests
 import json
 import importlib
 import lcd_i2c
-from info import CHANNEL, PASS, NICK
+from info import *
 
-global lol
 s = socket.socket()
 
 def connection():  # Connection au serveur + channel
@@ -67,27 +66,61 @@ def channelInfo():
         global modos
         global chatnb
         try:
-            infos = urllib.urlopen("https://tmi.twitch.tv/group/user/" + CHANNEL.split("#")[1] + "/chatters")
-            infos = json.loads(infos.read())
-            users = infos["chatters"]["viewers"]
+            infos = requests.get("https://tmi.twitch.tv/group/user/" + CHANNEL.split("#")[1] + "/chatters").json()
+            users = infos[u"chatters"][u"viewers"]
             # print(str(users))
-            modos = infos["chatters"]["moderators"] + infos["chatters"]["global_mods"] + infos["chatters"]["staff"] + infos["chatters"]["admins"]
+            modos = infos[u"chatters"][u"moderators"] + infos[u"chatters"][u"global_mods"] + infos[u"chatters"][u"staff"] + infos[u"chatters"][u"admins"]
             # print(str(modos))
-            chatnb = infos["chatter_count"]
-            if len(infos["chatters"]["staff"])>0:
-                send("OMG !!! There is someone from the twitch's staff ?!? Welcome @"+infos["chatters"]["staff"][0])
+            chatnb = infos[u"chatter_count"]
+            if len(infos[u"chatters"][u"staff"])>0:
+                send("OMG !!! There is someone from the twitch's staff ?!? Welcome @"+infos[u"chatters"][u"staff"][0])
     
         except Exception, e:
             print("channelInfo : " + str(e))
             pass
+
+def streaminfo():
+    global streamstate
+    global channelstate
+    try:
+        streamstate = requests.get("https://api.twitch.tv/kraken/streams/"+CHANNEL.split("#")[1]+CLIENTID)
+        channelstate = requests.get("https://api.twitch.tv/kraken/channels/"+CHANNEL.split("#")[1]+CLIENTID)
+    except Exception, e:
+        print("Stream info :"+str(e))
+        pass
+
+def uptime():
+    up = streamstate["stream"]["created_at"]        #2017-03-06T12:01:50Z
     
-    
+    return up
+
+def newstreaminfo():
+    streamlast = None
+    while stop == 0:
+        time.sleep(5)
+        streaminfo()
+        while pause == 0:
+            if streamstate["stream"] != None and streamON == 0:
+                streamON = True
+                send("Stream on sur le jeu "+streamstate["stream"]["game"]+" avec le titre "+channelstate["stream"]["channel"]["status"])
+            if streamstate["stream"] == None and streamON:
+                streamON = False
+                send("Fin de ce stream, merci a tous pour votre compagnie, et à la prochaine ;) n'hesitez à follow la chaine si le contenu vous plait :) Pour rester informé et etre au courant d'un prochain stream, allez suivre @elemzje sur twitter : https://twitter.com/Elemzje")
+            if streamON:
+                if streamlast["game"] != streamstate["stream"]["game"]:
+                    send("Nouveau jeu : "+streamstate["stream"]["game"])
+                
+            streamlast = streamstate["stream"]
+            while streamlast == streamstate["stream"] and pause == 0 and stop == 0:
+                time.sleep(5)
+
 def newchat():
         try:
             global chatnb
             global dejavu
             chatlt = 0
             while stop == 0:
+                time.sleep(1)
                 while pause == 0:
                     if chatnb != chatlt:
                         if chatnb > chatlt:
@@ -98,12 +131,12 @@ def newchat():
                             send("[" + str(chatnb)+" viewers (=)]")
                     chatlt = chatnb
                     tempnew = []
-                    for i in users:
-                        if not i in dejavu:
-                            dejavu.append(i)
+                    if len(users) != 0:
+                      for i in users:
+                        if not i.encode("utf8") in dejavu:
+                            dejavu.append(i.decode("utf8"))
                             tempnew.append(i)
                             send("/w "+i+" Bienvenue sur le stream d'elemzje. N'hesite pas à follow la chaine si ça te plait :) Sache aussi que ce compte est à la fois un bot et un humain, tu pourra distinguer le bot dans le chat par son ecriture verte ;) D'ailleur, si tu as des suggestions d'ameliorations/modifications du bot, merci de m'en faire part via les chuchottements twitch ou, si tu est un peu callé en programmation (python), via git-hub (\"!git\" dans le chat).")
-                            send("/w "+i+" desole si tu n'est pas nouveau sur le stream, mais sache que tu ne recevera ce message q'une seule fois, il faut du temps au bot pour ettoffer la base de données :)")
                     if len(tempnew) > 0:
                         send("Bienvenue à "+", ".join(tempnew)+", nouveau(x) sur le chat.")
                         savejson
@@ -114,32 +147,25 @@ def newchat():
         except Exception, e:
             print("Probleme dans \"newchat\"" + str(e))
             pass
-    
-    
+
 def recurrence():
         try:
             while stop == 0:
                 time.sleep(1)
                 while pause == 0 and stop == 0:
                     send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("utf-8"))
-                    for i in range(0, 1300, 10):
-                        if pause == 1 or stop == 1:
+                    for i in range(0, 300, 5):
+                        time.sleep(3)
+                        if pause == 0 or stop == 0:
+                            channelInfo()
+                            streaminfo()
+                        else:
                             break
-                        else:    
-                            try:
-                                channelInfo()
-                            except TypeError:
-                                pass
-                        if pause == 1 or stop == 1:
-                            break
-                        time.sleep(4)
-                        if pause == 1 or stop == 1:
-                            break
-                        time.sleep(4)
-            exit()
+                print("reccurence en pause")
+            print("fin de reccurence")
         except Exception, e:
             print("reccurence: " + str(e))
-            exit()
+            pass
     
 def send(Message):  # Envoit de messages dans le Channel
         log("Le bot envoie : " + Message)
@@ -151,7 +177,7 @@ def send(Message):  # Envoit de messages dans le Channel
             print("Envoyé : " + Message)
 
 if 1:
-     # Variables pour fonctions
+    #Variables pour fonctions
     jsoninfo = open("info.json", "r")
     infojson = json.load(jsoninfo)
     jsoninfo.close()
@@ -168,6 +194,8 @@ if 1:
     chatnb = 0
     users = []
     modos = []
+    streamstate = []
+    channelstate = []
 
     lcd_i2c.main()
     logfile = open("log.txt", "a")
@@ -178,11 +206,12 @@ if 1:
     connection()
     threading.Thread(target=recurrence).start()
     threading.Thread(target=newchat).start()
+    threading.Thread(target=newstreaminfo).start()
     crashlog = open("crash.txt", "w")
     crashlog.write("Wipe au restart, le : " + time.strftime("%c"))
     crashlog.close
     channelInfo()
-    
+
     arret = False
     try:
         while 1:
@@ -217,10 +246,7 @@ if 1:
                 else:
                     quote = text.split("quote")[-1]
                 if "s" in quote:
-                    quotesstr = ""
-                    for i in range(0, len(quotes) - 1):
-                        quotesstr = quotesstr + " " + str(i)+ " :\"" + quotes[i].encode("utf8") + "\""
-                    send("Voici les quotes, pour en citer une, merci d'indiquer son numero : " + quotesstr)
+                    send("Voici les quotes, pour en citer une, merci d'indiquer son numero : " + "\", \"".join(quotes))
                     pass
                 else:
                     quote = quote.split("\r")[0]
@@ -255,62 +281,62 @@ if 1:
             if ((" vas " in text or " vas-" in text) and "comment" in text) and "@mistercraft38" in text:
                 send("Je vais tres bien, merci... mais c'est de la triche: je suis un bot...")
     
-            if " c " in text and not ("ctrl" in text or "ctl" in text or "contr" in text) and sel < 20:
-                if sel < 1:
-                    send("Evite d'ecrire \"c\"... Ce serait plus agreable que tu ecrive \"c\'est\", \"ces\", \"ses\" ou encore \"sait\" @" + user)
-                else:
-                    send("*\"c'est\" ou \"ces\" @" + user)
+#            if " c " in text and not ("ctrl" in text or "ctl" in text or "contr" in text or " c e" in text) and sel < 20:
+#                if sel < 1:
+#                    send("Evite d'ecrire \"c\"... Ce serait plus agreable que tu ecrives \"c\'est\", \"ces\", \"ses\" ou encore \"sait\" @" + user)
+#                else:
+#                    send("*\"c'est\" ou \"ces\" @" + user)
     
-            if " pa " in text and sel < 20:
-                if sel < 1:
-                    send("Met un \"s\" à la fin de \"pas\" STP @" + user+" c'est plus agréable ;)")
-                else:
-                    send("*pas @" + user)
+#            if " pa " in text and sel < 20:
+#                if sel < 1:
+#                    send("Met un \"s\" à la fin de \"pas\" STP @" + user+" c'est plus agréable ;)")
+#                else:
+#                    send("*pas @" + user)
     
-            if " t " in text and sel < 20:
-                if sel < 1:
-                    send("Peut-tu ecrire \"t'es\", \"thé\" ( Kappa ) ou \"tes\" ? Ce serait plus agreable @" + user)
-                else:
-                    send("*\"t'es\" ou \"tes\" @" + user)
+#            if " t " in text and sel < 20 and not " t e" in text:
+#                if sel < 1:
+#                    send("Peux-tu ecrire \"t'es\", \"thé\" ( Kappa ) ou \"tes\" ? Ce serait plus agreable @" + user)
+#                else:
+#                    send("*\"t'es\" ou \"tes\" @" + user)
 
-            if " g " in text and sel < 20:
-                if sel < 1:
-                    send("Peut-tu ecrie \"j'ai\" en pleines lettres, c'est plsu joli :) @" + user)
-                else:
-                    send("*j'ai @" + user)
+#            if " g " in text and sel < 20:
+#                if sel < 1:
+#                    send("Peux-tu ecrie \"j'ai\" en pleines lettres, c'est plsu joli :) @" + user)
+#                else:
+#                    send("*j'ai @" + user)
 
-            if " chai pa" in text and sel < 20:
-                if sel < 1:
-                    send("Je t'encourage à érire \"je ne sais pas\" ou \"je sais pas\" au lieu de \"chai pas\", en plus d'etre plus joli, ca fait mine d'etre plus eduqué @" + user)
-                else:
-                    send("*je ne sais pas @" + user)
+#            if " chai pa" in text and sel < 20:
+#                if sel < 1:
+#                    send("Je t'encourage à érire \"je ne sais pas\" ou \"je sais pas\" au lieu de \"chai pas\", en plus d'etre plus joli, ca fait mine d'etre plus eduqué @" + user)
+#                else:
+#                    send("*je ne sais pas @" + user)
     
-            if " etai " in text and sel < 20:
-                if sel < 1:
-                    send("Peut-tu rajouter le \"s\" ou le \"t\" à la fin de \"étai\" ? ( petit rappel au cas où:  Le \"s\" c'est pour la premiere et deuxieme personne du singulier (je/tu) et le \"t\" pour la troisieme personne (il/elle/on)) @" + user)
-                else:
-                    send("*étais ou était @" + user)
+#            if " etai " in text and sel < 20:
+#                if sel < 1:
+#                    send("Peux-tu rajouter le \"s\" ou le \"t\" à la fin de \"étai\" ? ( petit rappel au cas où:  Le \"s\" c'est pour la premiere et deuxieme personne du singulier (je/tu) et le \"t\" pour la troisieme personne (il/elle/on)) @" + user)
+#                else:
+#                    send("*étais ou était @" + user)
     
-            if " bi1 " in text and sel < 20:
-                if sel < 1:
-                    send("Franchement ? Prend l'habitude d'ecrire correctement... \"bi1\" c'est optimisé pour les claviers T9, pas azerty, et sauf erreur, le 3310 n'est pas compatible avec twitch... Desolé pour la violence, mais ça m'insupporte... @" + user)
-                else:
-                    send("*bien @" + user)
+#            if " bi1 " in text and sel < 20:
+#                if sel < 1:
+#                    send("Franchement ? Prend l'habitude d'ecrire correctement... \"bi1\" c'est optimisé pour les claviers T9, pas azerty, et sauf erreur, le 3310 n'est pas compatible avec twitch... Desolé pour la violence, mais ça m'insupporte... @" + user)
+#                else:
+#                    send("*bien @" + user)
    
-            if " tro " in text and sel < 20:
-                if sel < 1:
-                    send("Il y a un \"p\" à la fin de \"trop\". @" + user)
-                else:
-                    send("*trop @" + user)
+#            if " tro " in text and sel < 20:
+#                if sel < 1:
+#                    send("Il y a un \"p\" à la fin de \"trop\". @" + user)
+#                else:
+#                    send("*trop @" + user)
     
-            if " g etai " in text:
-                send("BON DIEU ! Rassure-moi, tu fait expres ? @" + user +" ca me ferai mal au cœur de savoir que quelqu'un aie une telle ignorance de l'existance du beschrelle")
-    
-            if " ct " in text and sel < 20:
-                if sel < 1:
-                    send("Tu peux t'appliquer s'il te plait ? C'est pas non plus super long d'ecrire \"c'était\" en toutes lettres, et c'est beaucoup plus agreable pour les personnes qui te lisent... Cependant, si tu ecrivais sur un clavier T9, je te pardonnerais... mais bon, Twitch n'existe pas sur 3310... @" + user)
-                else:
-                    send("*c'était @" + user)
+#            if " g etai " in text:
+#                send("BON DIEU ! Rassure-moi, tu fait expres ? @" + user +" ca me ferai mal au cœur de savoir que quelqu'un aie une telle ignorance de l'existance du beschrelle")
+#    
+#            if " ct " in text and sel < 20:
+#                if sel < 1:
+#                    send("Tu peux t'appliquer s'il te plait ? C'est pas non plus super long d'ecrire \"c'était\" en toutes lettres, et c'est beaucoup plus agreable pour les personnes qui te lisent... Cependant, si tu ecrivais sur un clavier T9, je te pardonnerais... mais bon, Twitch n'existe pas sur 3310... @" + user)
+#                else:
+#                    send("*c'était @" + user)
     
             if ("blg" or "BLG" or "beluga" or "Beluga" or "béluga" or "Béluga") in text:
                 send("sckBLG sckBLG sckBLG")
@@ -432,7 +458,9 @@ if 1:
                 else:
                     channelInfo()
                     send("Tirage au sort d'un personne à timeout parmis les " + str(chatnb) + " personnes presentes dans le chat...")
-                    to = users[random.randint(0, len(users) - 1)]
+                    to = len(users)
+                    to = random.randint(0, to)
+                    to = users[to]
                     send(to + " a été tiré au sort pour un to de 100 secondes. Un dernier mot ? tu as 10 secondes...")
                     time.sleep(10)
                     send("/timeout " + to + " 100")
@@ -452,9 +480,11 @@ if 1:
             print('.')
         log("Extinction du Bot: KeyboardInterrupt \r\n")
         lcd_i2c.Afficher("KeyboardInterrupt", "fin")
-    
-    except DivisionByZero:
+        
+    except ZeroDivisionError:
         savejson
+        stop = True
+        pause = True
         pass
 
     except Exception, e:
@@ -473,7 +503,6 @@ if 1:
         arret = True
 
     finally:
-        global lol
         stop = True
         pause = True
         log("Fin de l'execution/fin du log \r\n \n")

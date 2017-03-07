@@ -3,12 +3,11 @@ import Bot_Twitch
 import importlib
 import time
 
-lol = True
-
 while lol:
     try:
         Bot_Twitch()
     except TypeError:
+        print("typeerror")
         pass
     print('Redemarrage du bot...')
     time.sleep(5)
