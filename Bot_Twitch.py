@@ -10,7 +10,12 @@ import importlib
 import lcd_i2c
 from info import *
 
+# Time
+# time.strftime("https://docs.python.org/3/library/time.html#time.struct_time",
+# time.struct_time(["https://docs.python.org/3/library/time.html#time.strftime"]))
+
 s = socket.socket()
+
 
 def connection():  # Connection au serveur + channel
         lcd_i2c.Afficher("Connexion...")
@@ -26,11 +31,11 @@ def connection():  # Connection au serveur + channel
         s.send("JOIN " + CHANNEL + "\r\n")
         print("Connected")
         lcd_i2c.Afficher("Connected", sel)
-    
-    
+
+
 def log(LOG):
         try:
-            logfile.write(time.ctime() + " $ " + LOG + " \r\n")
+            logfile.writse(time.ctime() + " $ " + LOG + " \r\n")
         except UnboundLocalError:
             pass
         except Exception, e:
@@ -38,8 +43,9 @@ def log(LOG):
             lcd_i2c.Afficher("Reprise log")
             logfile.close
             logfile = open("log.txt", "w")
-            logfile.write(time.ctime() + " $ Reprise du log: " + LOG +" \r\n")
-    
+            logfile.write(time.ctime() + " $ Reprise du log: " + LOG + " \r\n")
+
+
 def savejson():
         global infojson
         jsoninfo = open("info.json", "w")
@@ -48,104 +54,125 @@ def savejson():
         jsoninfo = open("info.json", "r")
         infojson = json.load(jsoninfo)
         jsoninfo.close()
-    
+
+
 def refreshjson():
         global infojson
         global quotes
         global recurrenceMessages
-        global dejavu
         jsoninfo = open("info.json", "r")
         infojson = json.load(jsoninfo)
         jsoninfo.close()
         quotes = infojson[u'quotes']
         recurrenceMessages = infojson[u'reccurence']
-        dejavu = infojson[u'dejavu']
-    
+
+
 def channelInfo():
         global users
         global modos
         global chatnb
         try:
-            infos = requests.get("https://tmi.twitch.tv/group/user/" + CHANNEL.split("#")[1] + "/chatters").json()
+            infos = requests.get(
+                "https://tmi.twitch.tv/group/user/" + CHANNEL.split("#")[1] + "/chatters").json()
             users = infos[u"chatters"][u"viewers"]
             # print(str(users))
-            modos = infos[u"chatters"][u"moderators"] + infos[u"chatters"][u"global_mods"] + infos[u"chatters"][u"staff"] + infos[u"chatters"][u"admins"]
+            modos = infos[u"chatters"][u"moderators"] + infos[u"chatters"][u"global_mods"] + \
+                infos[u"chatters"][u"staff"] + infos[u"chatters"][u"admins"]
             # print(str(modos))
             chatnb = infos[u"chatter_count"]
-            if len(infos[u"chatters"][u"staff"])>0:
-                send("OMG !!! There is someone from the twitch's staff ?!? Welcome @"+infos[u"chatters"][u"staff"][0])
-    
+            if len(infos[u"chatters"][u"staff"]) > 0:
+                send("OMG !!! There is someone from the twitch's staff ?!? Welcome @" +
+                     infos[u"chatters"][u"staff"][0])
+
         except Exception, e:
             print("channelInfo : " + str(e))
             pass
 
+
 def streaminfo():
     global streamstate
     global channelstate
+    global followers
     try:
-        streamstate = requests.get("https://api.twitch.tv/kraken/streams/"+CHANNEL.split("#")[1]+CLIENTID)
-        channelstate = requests.get("https://api.twitch.tv/kraken/channels/"+CHANNEL.split("#")[1]+CLIENTID)
+        streamstate = requests.get(
+            "https://api.twitch.tv/kraken/streams/" + CHANNEL.split("#")[1] + CLIENTID).json()
+        channelstate = requests.get(
+            "https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1] + CLIENTID).json()
+        followers = requests.get("https://api.twitch.tv/kraken/channels/" +
+                                 CHANNEL.split("#")[1] + "/follows" + CLIENTID).json()
+
     except Exception, e:
-        print("Stream info :"+str(e))
+        print("Stream info :" + str(e))
         pass
 
+
 def uptime():
-    up = streamstate["stream"]["created_at"]        #2017-03-06T12:01:50Z
-    
+    up = streamstate["stream"]["created_at"]  # 2017-03-06T12:01:50Z
+
     return up
+
 
 def newstreaminfo():
     streamlast = None
+    streamON = False
     while stop == 0:
-        time.sleep(5)
+        time.sleep(1)
         streaminfo()
         while pause == 0:
             if streamstate["stream"] != None and streamON == 0:
                 streamON = True
-                send("Stream on sur le jeu "+streamstate["stream"]["game"]+" avec le titre "+channelstate["stream"]["channel"]["status"])
+                send("Stream on sur le jeu " + streamstate["stream"]["game"] +
+                     " avec le titre " + channelstate["stream"]["channel"]["status"])
             if streamstate["stream"] == None and streamON:
                 streamON = False
                 send("Fin de ce stream, merci a tous pour votre compagnie, et à la prochaine ;) n'hesitez à follow la chaine si le contenu vous plait :) Pour rester informé et etre au courant d'un prochain stream, allez suivre @elemzje sur twitter : https://twitter.com/Elemzje")
             if streamON:
                 if streamlast["game"] != streamstate["stream"]["game"]:
-                    send("Nouveau jeu : "+streamstate["stream"]["game"])
-                
+                    send("Nouveau jeu : " + streamstate["stream"]["game"])
+
             streamlast = streamstate["stream"]
             while streamlast == streamstate["stream"] and pause == 0 and stop == 0:
                 time.sleep(5)
 
+
 def newchat():
-        #try:
-            global chatnb
-            global dejavu
+        # try:
+            time.sleep(5)
+            streaminfo()
             chatlt = 0
+            followlast = followers[u'follows'][0]
             while stop == 0:
                 time.sleep(1)
                 while pause == 0:
-                    if chatnb != chatlt:
-                        if chatnb > chatlt:
-                            send("[" + str(chatnb) + " viewers (+" + str(chatnb - chatlt) + ")]")
-                        elif chatnb < chatlt:
-                            send("[" + str(chatnb) + " viewers (" + str(chatnb - chatlt) + ")]")
-                        else:
-                            send("[" + str(chatnb)+" viewers (=)]")
+                    if chatnb > chatlt:
+                        send(
+                            "[" + str(chatnb) + " viewers (+" + str(chatnb - chatlt) + ")]")
+                    elif chatnb < chatlt:
+                        send(
+                            "[" + str(chatnb) + " viewers (" + str(chatnb - chatlt) + ")]")
+                    else:
+                        send("[" + str(chatnb) + " viewers (=)]")
                     chatlt = chatnb
                     tempnew = []
                     if len(users) != 0:
-                      for i in users:
-                        if not i.encode("utf8") in dejavu:
-                            dejavu.append(i.decode("utf8"))
-                            tempnew.append(i.encode("utf8"))
-                            #send("/w "+i.encode("utf8")+" Bienvenue sur le stream d'elemzje. N'hesite pas à follow la chaine si ça te plait :) Sache aussi que ce compte est à la fois un bot et un humain ;) Je suis ouvert a toutes modifications sur le bot, propose moi ce qui te passes par la tete ;)")
-                            #time.sleep(0.3)
+                        for i in followers[u'follows']:
+                            if i == followlast:
+                                break
+                            temp = i[u"user"][u"display_name"]
+                            if i[u"notifications"]:
+                                temp = temp + " (qui a activé(e) les notifications, merci bien <3 ;) )"
+                            tempnew.append(temp.encode("utf8"))
                     if len(tempnew) > 0:
-                        send("Bienvenue à "+", ".join(tempnew)+", nouveau(x) sur le chat.")
-                        savejson
-                    for i in range(0, 300, 5):
+                        if len(tempnew) == 1:
+                            send("Bienvenue à @"+tempnew[0]+". Merci pour ton follow et ton soutient, amuse-toi bien ;)")
+                        else:
+                            send("Bienvenue aux "+str(len(tempnew))+" nouveaux follows: "+" <3 ".join(tempnew)+". Merci pour vos soutients, amusez vous bien ;)")
+                    followlast = followers[u'follows'][0]
+                    for i in range(0, 200, 5):
                         time.sleep(5)
                         if stop != 0 or pause != 0:
                             break
-        #except Exception, e:
+        # except Exception, e:
         #    print("Probleme dans \"newchat\"" + str(e))
         #    pass
 
@@ -155,11 +182,22 @@ def recurrence():
                 time.sleep(1)
                 while pause == 0 and stop == 0:
                     send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("utf-8"))
-                    for i in range(0, 300, 5):
-                        time.sleep(3)
-                        if pause == 0 or stop == 0:
+                    for i in range(0, 250, 20):
+                        if pause == 0 and stop == 0:
                             channelInfo()
                             streaminfo()
+                        else:
+                            break
+                        if pause == 0 and stop == 0:
+                            time.sleep(5)
+                        else:
+                            break
+                        if pause == 0 and stop == 0:
+                            time.sleep(5)
+                        else:
+                            break
+                        if pause == 0 and stop == 0:
+                            time.sleep(5)
                         else:
                             break
                 print("reccurence en pause")
@@ -178,14 +216,13 @@ def send(Message):  # Envoit de messages dans le Channel
             print("Envoyé : " + Message)
 
 if 1:
-    #Variables pour fonctions
+    # Variables pour fonctions
     jsoninfo = open("info.json", "r")
     infojson = json.load(jsoninfo)
     jsoninfo.close()
     del jsoninfo
     quotes = infojson[u'quotes']
     recurrenceMessages = infojson[u'reccurence']
-    dejavu = infojson[u'dejavu']
     user = ''
     wiz = 0
     sel = -20
@@ -197,6 +234,7 @@ if 1:
     modos = []
     streamstate = []
     channelstate = []
+    followers = []
 
     lcd_i2c.main()
     logfile = open("log.txt", "a")
@@ -268,13 +306,16 @@ if 1:
                             print(e)
                             pass
     
-            if user == "lawry25" and lawry == True:
+            if user == "lawry25" and lawry:
                 send(Kappa)
                 lcd_i2c.Afficher("Kappa  " + str(sel), "Vive mistercraft")
                 if "stop kappa" in text:
                     lawry = False
             if "reKappa" in text:
                 lawry = True
+
+            if "Kappa" in text:
+                send("/me Kappa")
     
             if "salut" in text and "@mistercraft38" in text:
                 send("sckHLT ations camarade !")
@@ -470,6 +511,62 @@ if 1:
             if "!git" in text.split(" ")[0]:
                 send("Voici le lien du git-hub du code du bot, ce dernier est mis a jour environ une a deux fois par semaine, suivant ce que je peux lui apporter: https://github.com/Mistercraft38/twitch-bot")
     
+            if "!followcount" in text.split(" ")[0]:
+                send(str(followers[u"_total"])+" followers... ca fait beaucoup...")
+
+            if "!fc" in text.split(" ")[0]:
+                # send("42")
+                follow = requests.get("https://api.twitch.tv/kraken/users/"+user+"/follows/channels/"+CHANNEL.split('#')[1]+CLIENTID).json()
+                followN = follow[u"notifications"]
+                follow = follow[u"created_at"]
+                Follow = []
+                Follow.append(int(follow.split("-")[0]))
+                Follow.append(int(follow.split("-")[1]))
+                Follow.append(int(follow.split("-")[2].split("T")[0]))
+                Follow.append(int(follow.split("T")[1].split(":")[0])+1)
+                Follow.append(int(follow.split("T")[1].split(":")[1]))
+                Follow.append(int(follow.split("T")[1].split(":")[2].split("Z")[0]))
+                Follow.append(0)
+                Follow.append(0)
+                Follow.append(0)
+                FollowTime = [time.strftime("%A %d %B %y à %H : %M : %S", Follow)]
+                FollowTime.append(time.time()-time.mktime(Follow))
+                temp = ""
+                if FollowTime[1] > 31536000:
+                    temp = temp + str(FollowTime[1]//31536000) +" an"
+                    if FollowTime[1] > 63072000:
+                        temp = temp + "s "
+                    else:
+                        temp = temp + " "
+                if FollowTime[1]%31536000 > 86400:
+                    temp = temp + str((FollowTime[1] % 31536000)//86400)+" jour"
+                    if FollowTime[1]%31536000 > 172800:
+                        temp = temp + "s "
+                    else:
+                        temp = temp + " "
+                if FollowTime[1]%31536000%8640 > 3600:
+                    temp = temp + str((FollowTime[1]%31536000%8640)//3600)+" heure"
+                    if (FollowTime[1]%31536000%8640)//3600 > 7200:
+                        temp = temp + "s "
+                    else:
+                        temp = temp + " "
+                if FollowTime[1]%31536000%8640%3600 > 60:
+                    temp = temp + str((FollowTime[1]%31536000%8640%3600)//60) +" minute"
+                    if FollowTime[1]%31536000%8640%3600 > 120:
+                        temp = temp + "s "
+                    else:
+                        temp = temp + " "
+                temp = temp + str((FollowTime[1]%31536000%8640%3600%60)) + " secondes"
+                FollowTime.append(temp)
+                send("Ca fait depuis "+FollowTime[0]+" que tu follow la chaine, soit "+FollowTime[2]+" ou "+str(FollowTime[1])+" secondes... mais ca j'imagine que tu t'en fiche... ca fait "+str(FollowTime[1]/31536000)+" année(s) ou "+str((time.time()-time.mktime(FollowTime[1]))/31536000)+" ans apres l' \"Epoch\" de Linux")
+                if followN:
+                    send("En plus il a activé les notifications... merci beaucoup @"+user)
+                del follow
+                del followN
+                del Follow
+                del FollowTime
+                del temp
+
     except KeyboardInterrupt:
         stop = True
         pause = True
