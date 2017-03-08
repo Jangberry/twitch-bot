@@ -285,7 +285,7 @@ if 1:
                 else:
                     quote = text.split("quote")[-1]
                 if "s" in quote:
-                    send("Voici les quotes, pour en citer une, merci d'indiquer son numero : " + "\", \"".join(quotes))
+                    send("Voici les quotes, pour en citer une, merci d'indiquer son numero : " + "\", \"".join(quotes).encode("utf8"))
                     pass
                 else:
                     quote = quote.split("\r")[0]
@@ -558,7 +558,7 @@ if 1:
                         temp = temp + " "
                 temp = temp + str((FollowTime[1]%31536000%8640%3600%60)//1) + " secondes"
                 FollowTime.append(temp)
-                send("Ca fait depuis "+FollowTime[0]+" que tu follow la chaine, soit "+FollowTime[2]+". Ou "+str(FollowTime[1])+" secondes... ca fait "+str(FollowTime[1]/31536000)+" année(s) ou "+str((time.time()-FollowTime[1])/31536000)+" ans apres l'\"Epoch\" de Linux")
+                send("Tu follow la chaine depuis le "+FollowTime[0]+", soit "+FollowTime[2]+". <3 Ou "+str(FollowTime[1])+" secondes... "+str(FollowTime[1]/31536000)+" année(s) ou "+str((time.time()-FollowTime[1])/31536000)+" ans apres l'\"Epoch\" de Linux")
                 if followN:
                     send("En plus il a activé les notifications... merci beaucoup @"+user)
                 del follow
