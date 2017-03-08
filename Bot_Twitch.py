@@ -556,9 +556,9 @@ if 1:
                         temp = temp + "s "
                     else:
                         temp = temp + " "
-                temp = temp + str((FollowTime[1]%31536000%8640%3600%60)) + " secondes"
+                temp = temp + str((FollowTime[1]%31536000%8640%3600%60)//1) + " secondes"
                 FollowTime.append(temp)
-                send("Ca fait depuis "+FollowTime[0]+" que tu follow la chaine, soit "+FollowTime[2]+" ou "+str(FollowTime[1])+" secondes... mais ca j'imagine que tu t'en fiche... ca fait "+str(FollowTime[1]/31536000)+" année(s) ou "+str((time.time()-time.mktime(FollowTime[1]))/31536000)+" ans apres l' \"Epoch\" de Linux")
+                send("Ca fait depuis "+FollowTime[0]+" que tu follow la chaine, soit "+FollowTime[2]+". Ou "+str(FollowTime[1])+" secondes... ca fait "+str(FollowTime[1]/31536000)+" année(s) ou "+str((time.time()-FollowTime[1])/31536000)+" ans apres l'\"Epoch\" de Linux")
                 if followN:
                     send("En plus il a activé les notifications... merci beaucoup @"+user)
                 del follow
