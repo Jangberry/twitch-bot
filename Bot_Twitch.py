@@ -1,12 +1,12 @@
 #-*- coding: utf-8 -*-
+import importlib
+import json
+import random
 import socket
 import sys
-import time
 import threading
-import random
+import time
 import requests
-import json
-import importlib
 import lcd_i2c
 from info import *
 
@@ -72,17 +72,14 @@ def channelInfo():
         global modos
         global chatnb
         try:
-            infos = requests.get(
-                "https://tmi.twitch.tv/group/user/" + CHANNEL.split("#")[1] + "/chatters").json()
+            infos = requests.get("https://tmi.twitch.tv/group/user/" + CHANNEL.split("#")[1] + "/chatters").json()
             users = infos[u"chatters"][u"viewers"]
             # print(str(users))
-            modos = infos[u"chatters"][u"moderators"] + infos[u"chatters"][u"global_mods"] + \
-                infos[u"chatters"][u"staff"] + infos[u"chatters"][u"admins"]
+            modos = infos[u"chatters"][u"moderators"] + infos[u"chatters"][u"global_mods"] + infos[u"chatters"][u"staff"] + infos[u"chatters"][u"admins"]
             # print(str(modos))
             chatnb = infos[u"chatter_count"]
             if len(infos[u"chatters"][u"staff"]) > 0:
-                send("OMG !!! There is someone from the twitch's staff ?!? Welcome @" +
-                     infos[u"chatters"][u"staff"][0])
+                send("OMG !!! There is someone from the twitch's staff ?!? Welcome @" +infos[u"chatters"][u"staff"][0])
 
         except Exception, e:
             print("channelInfo : " + str(e))
@@ -94,23 +91,13 @@ def streaminfo():
     global channelstate
     global followers
     try:
-        streamstate = requests.get(
-            "https://api.twitch.tv/kraken/streams/" + CHANNEL.split("#")[1] + CLIENTID).json()
-        channelstate = requests.get(
-            "https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1] + CLIENTID).json()
-        followers = requests.get("https://api.twitch.tv/kraken/channels/" +
-                                 CHANNEL.split("#")[1] + "/follows" + CLIENTID).json()
+        streamstate = requests.get("https://api.twitch.tv/kraken/streams/" + CHANNEL.split("#")[1] + CLIENTID).json()
+        channelstate = requests.get("https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1] + CLIENTID).json()
+        followers = requests.get("https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1] + "/follows" + CLIENTID).json()
 
     except Exception, e:
         print("Stream info :" + str(e))
         pass
-
-
-def uptime():
-    up = streamstate["stream"]["created_at"]  # 2017-03-06T12:01:50Z
-
-    return up
-
 
 def newstreaminfo():
     streamlast = None
@@ -132,11 +119,11 @@ def newstreaminfo():
 
             streamlast = streamstate["stream"]
             while streamlast == streamstate["stream"] and pause == 0 and stop == 0:
-                time.sleep(5)
+                time.sleep(1)
 
 
 def newchat():
-        # try:
+        try:
             time.sleep(5)
             streaminfo()
             chatlt = 0
@@ -168,13 +155,13 @@ def newchat():
                         else:
                             send("Bienvenue aux "+str(len(tempnew))+" nouveaux follows: "+" <3 ".join(tempnew)+". Merci pour vos soutients, amusez vous bien ;)")
                     followlast = followers[u'follows'][0]
-                    for i in range(0, 200, 5):
+                    for i in range(0, 150, 5):
                         time.sleep(5)
                         if stop != 0 or pause != 0:
                             break
-        # except Exception, e:
-        #    print("Probleme dans \"newchat\"" + str(e))
-        #    pass
+        except Exception, e:
+            print("Probleme dans \"newchat\"" + str(e))
+            pass
 
 def recurrence():
         try:
@@ -182,7 +169,7 @@ def recurrence():
                 time.sleep(1)
                 while pause == 0 and stop == 0:
                     send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("utf-8"))
-                    for i in range(0, 250, 20):
+                    for i in range(0, 300, 20):
                         if pause == 0 and stop == 0:
                             channelInfo()
                             streaminfo()
@@ -285,7 +272,7 @@ if 1:
                 else:
                     quote = text.split("quote")[-1]
                 if "s" in quote:
-                    send("Voici les quotes, pour en citer une, merci d'indiquer son numero : " + "\", \"".join(quotes).encode("utf8"))
+                    send("Voici les quotes, pour en citer une, merci d'indiquer son numero : \"" + "\", \"".join(quotes).encode("utf8")+"\"")
                     pass
                 else:
                     quote = quote.split("\r")[0]
@@ -389,8 +376,7 @@ if 1:
             if "!to " in text and user in modos:
                 print('to')
                 if "!to" in text.split(" ")[0] and len(text.split(" ")) > 2:
-                    send("/timeout " + text.split(" ")
-                         [1] + " " + text.split(" ")[2])
+                    send("/timeout " + text.split(" ")[1] + " " + text.split(" ")[2])
     
             if user == "wizebot" and wiz == 0:
                 send("bonjour @wizebot je viens en paix, pour ne pas t'assister. Je serai present ici pour te faire souffrir.")
@@ -404,8 +390,7 @@ if 1:
     
             if "!au revoir" in text and (user == "mistercraft38" or "elemzje" or "lawry25"):
                 print("au revoir")
-                send("/me Sur demande de @" + user +
-                     " votre bot bien aimé s'en vas... au revoir. sckHLT ;) ")
+                send("/me Sur demande de @" + user + " votre bot bien aimé s'en vas... au revoir. sckHLT ;) ")
                 wiz = 0
                 pause = True
                 lcd_i2c.Afficher("Pause du bot", str(sel))
@@ -422,8 +407,7 @@ if 1:
                         rep = recu.split(":")[1]
                         s.send("PONG :" + rep + "\r\n")
                 pause = False
-                send("/me Votre bot préféré ( Kappa ) est de retour !!! Merci à @" +
-                     user + " pour avoir aidé le phoenix à renaitre de ses cendres")
+                send("/me Votre bot préféré ( Kappa ) est de retour !!! Merci à @" +user + " pour avoir aidé le phoenix à renaitre de ses cendres")
     
             if "!config" in text and len(text.split(" ")) < 2:
                 send("Tu sais que c'est marqué dans la description de la chaine ? Bon aller, vus que je suis gentil: ")
@@ -463,8 +447,7 @@ if 1:
                 grains = grains + 1
                 print(str(sel))
                 if grains > 1000:
-                    send("c'est le grain de sel de @" + user +
-                         " qui fait déborder le vase... sel reinitialisé à 20")
+                    send("c'est le grain de sel de @" + user +" qui fait déborder le vase... sel reinitialisé à 20")
                     sel = 20
                 lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
     
@@ -475,8 +458,7 @@ if 1:
                 print(str(sel))
                 grains = grains + 2
                 if grains > 1000:
-                    send("c'est le grain de sucre de @" + user +
-                         " qui fait déborder le vase... sel reinitialisé à -20")
+                    send("c'est le grain de sucre de @" + user +" qui fait déborder le vase... sel reinitialisé à -20")
                     sel = -20
                 lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
     
@@ -566,6 +548,46 @@ if 1:
                 del Follow
                 del FollowTime
                 del temp
+
+            if "!uptime" in text.split(" ")[0]:
+              if streamstate[u'stream'] == None:
+                send("Stream OFF.. et il n'y a pas de downtime Kappa")
+              else:
+                up = streamstate["stream"]["created_at"]
+                uptime = []
+                uptime.append(int(follow.split("-")[0]))
+                uptime.append(int(follow.split("-")[1]))
+                uptime.append(int(follow.split("-")[2].split("T")[0]))
+                uptime.append(int(follow.split("T")[1].split(":")[0]) + 1)
+                uptime.append(int(follow.split("T")[1].split(":")[1]))
+                uptime.append(int(follow.split("T")[1].split(":")[2].split("Z")[0]))
+                uptime.append(0)
+                uptime.append(0)
+                uptime.append(0)
+                uptime = time.time() - time.mktime(uptime)
+                up = ""
+                if uptime % 31536000 > 86400:
+                    up = up + str((uptime % 31536000) // 86400) + " jour"
+                    if uptime % 31536000 > 172800:
+                        up = up + "s "
+                    else:
+                        up = up + " "
+                if uptime % 31536000 % 8640 > 3600:
+                    up = up + str((uptime % 31536000 %8640) // 3600) + " heure"
+                    if (uptime % 31536000 % 8640) // 3600 > 7200:
+                        up = up + "s "
+                    else:
+                        up = up + " "
+                if uptime % 31536000 % 8640 % 3600 > 60:
+                    up = up + str((uptime % 31536000 % 8640 %3600) // 60) + " minute"
+                    if uptime % 31536000 % 8640 % 3600 > 120:
+                        up = up + "s "
+                    else:
+                        up = up + " "
+                up = up + str((uptime % 31536000 % 8640 % 3600 % 60) // 1) + " secondes"
+                send("Stream up depuis " + up)
+                del up
+                del uptime
 
     except KeyboardInterrupt:
         stop = True
