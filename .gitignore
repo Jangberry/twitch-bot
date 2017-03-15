@@ -1,4 +1,5 @@
-info.*
+info.py
+*.log
 *.txt
 *.pyc
 /.vs/*

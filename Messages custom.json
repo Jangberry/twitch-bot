@@ -1,0 +1,5 @@
+{
+    "!_! exemple (voila la syntaxe a respecter pour les commandes custom)": ["Voila un exemple de text (qui se retrouvera dans le chat, si quelqu'un ecrit la commande ecrite avant les deux points)"],
+    "!_! et surtout, faut faire attention à " : ["ne pas oublier la virgule entre 2 commandes"],
+    "!test" : ["lol"]
+}

@@ -14,6 +14,8 @@ from info import *
 # time.strftime("https://docs.python.org/3/library/time.html#time.struct_time",
 # time.struct_time(["https://docs.python.org/3/library/time.html#time.strftime"]))
 
+#gamepad: \ud83c\udfae Coeur: \ud83d\udc9a t\u00e9l\u00e9 : \ud83d\udcfa abeille : \ud83d\udc1d
+
 s = socket.socket()
 
 
@@ -35,15 +37,13 @@ def connection():  # Connection au serveur + channel
 
 def log(LOG):
         try:
-            logfile.writse(time.ctime() + " $ " + LOG + " \r\n")
-        except UnboundLocalError:
-            pass
+            logfile.write(time.ctime() + " $ " + LOG +"\r\n")
         except Exception, e:
             print('e')
-            lcd_i2c.Afficher("Reprise log")
+            lcd_i2c.Afficher("Out of space")
             logfile.close
             logfile = open("log.txt", "w")
-            logfile.write(time.ctime() + " $ Reprise du log: " + LOG + " \r\n")
+            logfile.write(time.ctime() + " $ Reprise du log apres disque plein: " + LOG + " \r\n")
 
 
 def savejson():
@@ -60,11 +60,14 @@ def refreshjson():
         global infojson
         global quotes
         global recurrenceMessages
+        global CustMess
         jsoninfo = open("info.json", "r")
         infojson = json.load(jsoninfo)
         jsoninfo.close()
         quotes = infojson[u'quotes']
         recurrenceMessages = infojson[u'reccurence']
+        CustMess = open("Messages custom.json")
+        CustMess = json.load(CustMess)
 
 
 def channelInfo():
@@ -79,7 +82,7 @@ def channelInfo():
             # print(str(modos))
             chatnb = infos[u"chatter_count"]
             if len(infos[u"chatters"][u"staff"]) > 0:
-                send("OMG !!! There is someone from the twitch's staff ?!? Welcome @" +infos[u"chatters"][u"staff"][0])
+                send("OMG !!! There is someone from the twitch's staff ?!? Welcome @" +infos[u"chatters"][u"staff"][0].encode("utf8"))
 
         except Exception, e:
             print("channelInfo : " + str(e))
@@ -90,12 +93,14 @@ def streaminfo():
     global streamstate
     global channelstate
     global followers
-    try:
+    retry = True
+    while retry:
+      try:
         streamstate = requests.get("https://api.twitch.tv/kraken/streams/" + CHANNEL.split("#")[1] + CLIENTID).json()
         channelstate = requests.get("https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1] + CLIENTID).json()
         followers = requests.get("https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1] + "/follows" + CLIENTID).json()
-
-    except Exception, e:
+        retry = False
+      except Exception, e:
         print("Stream info :" + str(e))
         pass
 
@@ -106,21 +111,62 @@ def newstreaminfo():
         time.sleep(1)
         streaminfo()
         while pause == 0:
-            if streamstate["stream"] != None and streamON == 0:
+            try:
+             if streamstate[u"stream"] != None and not streamON:
                 streamON = True
-                send("Stream on sur le jeu " + streamstate["stream"]["game"] +
-                     " avec le titre " + channelstate["stream"]["channel"]["status"])
-            if streamstate["stream"] == None and streamON:
+                send("Stream on \ud83d\udcfa sur le jeu " + streamstate[u"stream"][u"game"].encode("utf8") +" avec le titre " + channelstate[u"stream"][u"channel"][u"status"].encode("utf8"))
+             if streamstate[u"stream"] == None and streamON:
                 streamON = False
-                send("Fin de ce stream, merci a tous pour votre compagnie, et à la prochaine ;) n'hesitez à follow la chaine si le contenu vous plait :) Pour rester informé et etre au courant d'un prochain stream, allez suivre @elemzje sur twitter : https://twitter.com/Elemzje")
-            if streamON:
-                if streamlast["game"] != streamstate["stream"]["game"]:
-                    send("Nouveau jeu : " + streamstate["stream"]["game"])
+                send("Fin de ce stream \ud83d\udcfa , merci a tous pour votre compagnie, et à la prochaine ;) n'hesitez à follow la chaine si le contenu vous plait :) Pour rester informé et etre au courant d'un prochain stream, allez suivre @elemzje sur twitter : https://twitter.com/Elemzje")
+             if streamON:
+                if streamlast[u"game"] != streamstate[u"stream"][u"game"]:
+                        send("Nouveau jeu : \ud83c\udfae " + streamstate[u"stream"][u"game"].encode("utf8"))
+          
+             streamlast = streamstate[u"stream"]
+            except Exception, e:
+                  print('newstraminfo :'+str(e))
+                  streaminfo()
+                  pass
+            try:
+                while streamlast == streamstate[u"stream"] and pause == 0 and stop == 0:
+                        streaminfo()
+                        time.sleep(4)
+            except Exception, e:
+                    streaminfo
+                    pass
 
-            streamlast = streamstate["stream"]
-            while streamlast == streamstate["stream"] and pause == 0 and stop == 0:
-                time.sleep(1)
-
+def newfollow():
+        tempnew = []
+        temp = ''
+        init = True
+        time.sleep(5)
+        streaminfo()
+        follolast = followers[u'follows'][0]
+        while not stop:
+            time.sleep(1)
+            while not pause:
+                tempnew = []
+                temp = ''
+                for i in followers[u'follows']:
+                        temp = i[u"user"][u"display_name"]
+                        if i[u"notifications"]:
+                            temp = temp + u" (qui a activé(e) les notifications, merci bien <3 ;) )"
+                        tempnew.append(temp)
+                if len(tempnew) > 0 and not init:
+                    if len(tempnew) == 1:
+                        send(u"Bienvenue à @"+tempnew[0]+u". Merci pour ton follow et ton soutient, amuse-toi bien ;) <3")
+                    else:
+                        send(u" \ud83d\udc9a Bienvenue aux "+str(len(tempnew)).decode("utf8")+u" nouveaux follows: "+u" <3 ".join(tempnew)+u". Merci pour vos soutients \ud83d\udc9a , amusez vous bien ;)")
+                followlast = followers[u'follows'][0]
+                if init:
+                    init = False
+                try:
+                    while not pause and not stop and followlast[u'user'][u'display_name'] == followers[u'follows'][0][u'user'][u'display_name']:
+                        time.sleep(4)
+                        streaminfo
+                except Exception:
+                    pass
+        
 
 def newchat():
         try:
@@ -132,29 +178,12 @@ def newchat():
                 time.sleep(1)
                 while pause == 0:
                     if chatnb > chatlt:
-                        send(
-                            "[" + str(chatnb) + " viewers (+" + str(chatnb - chatlt) + ")]")
+                        send("[" + str(chatnb) + " viewers (+" + str(chatnb - chatlt) + ")]")
                     elif chatnb < chatlt:
-                        send(
-                            "[" + str(chatnb) + " viewers (" + str(chatnb - chatlt) + ")]")
+                        send("[" + str(chatnb) + " viewers (" + str(chatnb - chatlt) + ")]")
                     else:
                         send("[" + str(chatnb) + " viewers (=)]")
                     chatlt = chatnb
-                    tempnew = []
-                    if len(users) != 0:
-                        for i in followers[u'follows']:
-                            if i == followlast:
-                                break
-                            temp = i[u"user"][u"display_name"]
-                            if i[u"notifications"]:
-                                temp = temp + " (qui a activé(e) les notifications, merci bien <3 ;) )"
-                            tempnew.append(temp.encode("utf8"))
-                    if len(tempnew) > 0:
-                        if len(tempnew) == 1:
-                            send("Bienvenue à @"+tempnew[0]+". Merci pour ton follow et ton soutient, amuse-toi bien ;)")
-                        else:
-                            send("Bienvenue aux "+str(len(tempnew))+" nouveaux follows: "+" <3 ".join(tempnew)+". Merci pour vos soutients, amusez vous bien ;)")
-                    followlast = followers[u'follows'][0]
                     for i in range(0, 150, 5):
                         time.sleep(5)
                         if stop != 0 or pause != 0:
@@ -168,7 +197,10 @@ def recurrence():
             while stop == 0:
                 time.sleep(1)
                 while pause == 0 and stop == 0:
-                    send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("utf-8"))
+                    try:
+                        send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("utf8"))
+                    except Exception:
+                        pass
                     for i in range(0, 300, 20):
                         if pause == 0 and stop == 0:
                             channelInfo()
@@ -187,20 +219,18 @@ def recurrence():
                             time.sleep(5)
                         else:
                             break
-                print("reccurence en pause")
-            print("fin de reccurence")
         except Exception, e:
             print("reccurence: " + str(e))
             pass
     
 def send(Message):  # Envoit de messages dans le Channel
-        log("Le bot envoie : " + Message)
+        log("Le bot envoie : " + Message.encode("utf8"))
         if "/" in Message.split(" ")[0]:
-            s.send("PRIVMSG " + CHANNEL + " :" + Message + "\r\n")  # envoie commande
-            print("Commande : " + Message)
+            s.send("PRIVMSG " + CHANNEL + " :" + Message.encode("utf8") + "\r\n")  # envoie commande
+            print("Commande : " + Message.encode("utf8"))
         else:
-            s.send("PRIVMSG " + CHANNEL + " :/me _ MrDestructoid : " + Message + "\r\n")  # envoie message
-            print("Envoyé : " + Message)
+            s.send("PRIVMSG " + CHANNEL + u" :/me \ud83d\udc1d _ MrDestructoid : ".encode("utf8") + Message.encode("utf8") + u" \ud83d\udc1d \r\n".encode("utf8"))  # envoie message
+            print("Envoyé : " + Message.encode("utf8"))
 
 if 1:
     # Variables pour fonctions
@@ -208,6 +238,8 @@ if 1:
     infojson = json.load(jsoninfo)
     jsoninfo.close()
     del jsoninfo
+    CustMess = open("Messages custom.json")
+    CustMess = json.load(CustMess)
     quotes = infojson[u'quotes']
     recurrenceMessages = infojson[u'reccurence']
     user = ''
@@ -224,18 +256,13 @@ if 1:
     followers = []
 
     lcd_i2c.main()
-    logfile = open("log.txt", "a")
+    logfile = open("chat.log", "a")
     logfile.write(time.ctime() + " $ " + "Nouvelle connexion \r\n")
-    crashlog = open("crash.txt", "r")
-    print(crashlog.read())
-    crashlog.close
     connection()
     threading.Thread(target=recurrence).start()
     threading.Thread(target=newchat).start()
     threading.Thread(target=newstreaminfo).start()
-    crashlog = open("crash.txt", "w")
-    crashlog.write("Wipe au restart, le : " + time.strftime("%c"))
-    crashlog.close
+    threading.Thread(target=newfollow).start()
     channelInfo()
 
     arret = False
@@ -245,26 +272,33 @@ if 1:
             text = ""
             user = ""
             recu = s.recv(2040)
-            log(recu)
     
             if "PING" in recu:  # pong
                 rep = recu.split(":")[1]
                 s.send("PONG :" + rep + "\r\n")
                 stop = False
                 pause = False
+                log("PING de twitch")
     
             elif len(recu.split(":")) >= 3 and "PRIVMSG" in recu:  # séparation user/texte
                 user = recu.split("!")[0]
                 user = user.split(":")[1]
                 text = recu.split("PRIVMSG "+CHANNEL+" :")[1].split("\r\n")[0]
-                print(user + " : " + text)  # log
+                print(user + " : " + text)  #console
+                log(user + " : " + text)    #log
         
             elif "RECONNECT" in recu:
                 1/0
             else:
+                log("message impossible a interpreter : /r/n        "+recu)
                 print("Recu :"+recu)
     
                 ###______Commandes______###
+
+            try:
+                send(CustMess[text.split(" ")[0].decode("utf8")][0])
+            except KeyError:
+                pass
     
             if "!quote" in text:
                 if len(text.split(" ")) > 0:
@@ -282,14 +316,13 @@ if 1:
                     else:
                         try:
                             quote = int(quote)
-                            send(quotes[quote].encode("utf8"))
+                            send(quotes[quote+1].encode("utf8"))
                         except ValueError, e:
                             send("Veuillez entrer une valeur numerique (1, 2, 3, etc...) et non le contenu de la quote. Pour connaitre les quotes connues, tapez !quotes")
                             print(e)
                             pass
                         except IndexError, e:
-                            send(
-                            "Quote inconnue, tapez !quotes pour connaitre les quotes connues")
+                            send("Quote inconnue, tapez !quotes pour connaitre les quotes connues")
                             print(e)
                             pass
     
@@ -301,7 +334,7 @@ if 1:
             if "reKappa" in text:
                 lawry = True
 
-            if "Kappa" in text:
+            if "Kappa" in text and len(text) < 2:
                 send("/me Kappa")
     
             if "salut" in text and "@mistercraft38" in text:
@@ -388,7 +421,7 @@ if 1:
             if "!twitter" in text and len(text.split(" ")) < 2:
                 send("Bon... nightbot vas te donner le twitter d'@elemzje , donc le mien c'est @ mistercraft385 ;)")
     
-            if "!au revoir" in text and (user == "mistercraft38" or "elemzje" or "lawry25"):
+            if "!au revoir" in text and user in modos:
                 print("au revoir")
                 send("/me Sur demande de @" + user + " votre bot bien aimé s'en vas... au revoir. sckHLT ;) ")
                 wiz = 0
@@ -482,9 +515,7 @@ if 1:
                 else:
                     channelInfo()
                     send("Tirage au sort d'un personne à timeout parmis les " + str(chatnb) + " personnes presentes dans le chat...")
-                    to = len(users)
-                    to = random.randint(0, to)
-                    to = users[to]
+                    to = users[random.randint(0, len(users))].encode('utf8')
                     send(to + " a été tiré au sort pour un to de 100 secondes. Un dernier mot ? tu as 10 secondes...")
                     time.sleep(10)
                     send("/timeout " + to + " 100")
@@ -540,7 +571,7 @@ if 1:
                         temp = temp + " "
                 temp = temp + str((FollowTime[1]%31536000%8640%3600%60)//1) + " secondes"
                 FollowTime.append(temp)
-                send("Tu follow la chaine depuis le "+FollowTime[0]+", soit "+FollowTime[2]+". <3 Ou "+str(FollowTime[1])+" secondes... "+str(FollowTime[1]/31536000)+" année(s) ou "+str((time.time()-FollowTime[1])/31536000)+" ans apres l'\"Epoch\" de Linux")
+                send("Tu follow la chaine depuis le "+FollowTime[0]+", soit "+FollowTime[2]+". <3 Ou "+str(FollowTime[1])+" secondes... "+str(FollowTime[1]/31536000)+" année(s) ou "+str((time.time()-FollowTime[1])/31536000)+" ans apres l'Epoch de Linux")
                 if followN:
                     send("En plus il a activé les notifications... merci beaucoup @"+user)
                 del follow
@@ -549,18 +580,21 @@ if 1:
                 del FollowTime
                 del temp
 
+            if "!epoch" in text.split(" ")[0]:
+                send("L'epoch de linux: un epoch est une date de reference utilise par plusieurs languages de programmation (y compris le python, language de ce bot) qui permet d'obtenir une valeur en seconde depuis cette date, sachant que cette date peux changer d'un OS a un autre. Sur linux (OS sur lequel tourne le bot), l'epoch est le 1er janvier 1970 à 00:00 UTC. Plus d'infos https://fr.wikipedia.org/wiki/Epoch")
+
             if "!uptime" in text.split(" ")[0]:
               if streamstate[u'stream'] == None:
                 send("Stream OFF.. et il n'y a pas de downtime Kappa")
               else:
                 up = streamstate["stream"]["created_at"]
                 uptime = []
-                uptime.append(int(follow.split("-")[0]))
-                uptime.append(int(follow.split("-")[1]))
-                uptime.append(int(follow.split("-")[2].split("T")[0]))
-                uptime.append(int(follow.split("T")[1].split(":")[0]) + 1)
-                uptime.append(int(follow.split("T")[1].split(":")[1]))
-                uptime.append(int(follow.split("T")[1].split(":")[2].split("Z")[0]))
+                uptime.append(int(up.split("-")[0]))
+                uptime.append(int(up.split("-")[1]))
+                uptime.append(int(up.split("-")[2].split("T")[0]))
+                uptime.append(int(up.split("T")[1].split(":")[0]) + 1)
+                uptime.append(int(up.split("T")[1].split(":")[1]))
+                uptime.append(int(up.split("T")[1].split(":")[2].split("Z")[0]))
                 uptime.append(0)
                 uptime.append(0)
                 uptime.append(0)
@@ -592,35 +626,32 @@ if 1:
     except KeyboardInterrupt:
         stop = True
         pause = True
+        send("Arret du bot")
         send("/disconnect")
         savejson
         print("En attente de la fin des threads...")
-        for i in range(0, 5):
-            time.sleep(1)
+        for i in range(0, 8):
+            time.sleep(0.5)
             print('.')
         log("Extinction du Bot: KeyboardInterrupt \r\n")
         lcd_i2c.Afficher("KeyboardInterrupt", "fin")
         
     except ZeroDivisionError:
-        savejson
+        savejson()
         stop = True
         pause = True
         pass
 
-    except Exception, e:
-        print(str(e))
-        log(time.ctime() + " $ " + "Crash : " + str(e))
-        send("Ce robot a crash... Merci d'en informer son créateur... J'AI ENVIE D'ETRE UN BOT SANS BUG !!! Erreur : " + str(e))
-        send("/disconnect")
-        savejson
-        crashlog = open("crash.txt", "a")
-        crashlog.write(time.strftime("%c") + " : " + str(e))
-        crashlog.close
-        log(str(e))
-        lcd_i2c.Afficher("Bug:" + str(e))
-        stop = True
-        pause = True
-        arret = True
+    #except Exception, e:
+    #    print(str(e))
+    #    log(time.ctime() + " $ " + "Crash : " + str(e))
+    #    send("Ce robot a crash... Merci d'en informer son créateur... J'AI ENVIE D'ETRE UN BOT SANS BUG !!! Erreur : " + str(e))
+    #    send("/disconnect")
+    #    savejson()
+    #    log(str(e))
+    #    lcd_i2c.Afficher("Bug:" + str(e))
+    #    stop = True
+    #    pause = True
 
     finally:
         stop = True
