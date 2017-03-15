@@ -18,6 +18,28 @@ from info import *
 
 s = socket.socket()
 
+logfile = open("chat.log", "a+")
+logfile.write(time.ctime() + " $ " + "Nouvelle connexion \r\n")
+
+def log(LOG):
+        global logfile
+        try:
+            logfile.write(time.ctime() + " $ " + LOG.encode("utf8") +"\r\n")
+            if len(logfile.read().split("/n")) > 5000:
+                ancienlog = logfile.read().split("/n")[-500:]
+                logfile.close
+                logfile = open("chat.log", w)
+                logfile.write(ancienlog)
+                logfile.close
+                logfile = open("chat.log", "a+")
+                logfile.write(time.ctime() + " $ reprise du log suite a un espace de stockage plein \r\n")
+
+        except Exception, e:
+            print(str(e))
+            lcd_i2c.Afficher("Out of space")
+            logfile.close
+            logfile = open("log.txt", "w")
+            logfile.write(time.ctime() + " $ Reprise du log apres disque plein: " + LOG.encode('utf8') + " \r\n")
 
 def connection():  # Connection au serveur + channel
         lcd_i2c.Afficher("Connexion...")
@@ -34,26 +56,20 @@ def connection():  # Connection au serveur + channel
         print("Connected")
         lcd_i2c.Afficher("Connected", sel)
 
-
-def log(LOG):
-        try:
-            logfile.write(time.ctime() + " $ " + LOG +"\r\n")
-        except Exception, e:
-            print('e')
-            lcd_i2c.Afficher("Out of space")
-            logfile.close
-            logfile = open("log.txt", "w")
-            logfile.write(time.ctime() + " $ Reprise du log apres disque plein: " + LOG + " \r\n")
-
-
 def savejson():
         global infojson
+        global CustMess
         jsoninfo = open("info.json", "w")
         jsoninfo.write(json.dumps(infojson))
         jsoninfo.close
         jsoninfo = open("info.json", "r")
         infojson = json.load(jsoninfo)
         jsoninfo.close()
+        CustMesstemp = CustMess
+        CustMess = open("Messages custom.json", "w")
+        CustMess.write(json.dumps(CustMesstemp))
+        CustMess = CustMesstemp
+        del CustMesstemp
 
 
 def refreshjson():
@@ -68,7 +84,6 @@ def refreshjson():
         recurrenceMessages = infojson[u'reccurence']
         CustMess = open("Messages custom.json")
         CustMess = json.load(CustMess)
-
 
 def channelInfo():
         global users
@@ -87,7 +102,6 @@ def channelInfo():
         except Exception, e:
             print("channelInfo : " + str(e))
             pass
-
 
 def streaminfo():
     global streamstate
@@ -224,12 +238,12 @@ def recurrence():
             pass
     
 def send(Message):  # Envoit de messages dans le Channel
-        log("Le bot envoie : " + Message.encode("utf8"))
+        log("Le bot envoie : " + Message)
         if "/" in Message.split(" ")[0]:
             s.send("PRIVMSG " + CHANNEL + " :" + Message.encode("utf8") + "\r\n")  # envoie commande
             print("Commande : " + Message.encode("utf8"))
         else:
-            s.send("PRIVMSG " + CHANNEL + u" :/me \ud83d\udc1d _ MrDestructoid : ".encode("utf8") + Message.encode("utf8") + u" \ud83d\udc1d \r\n".encode("utf8"))  # envoie message
+            s.send("PRIVMSG " + CHANNEL + u" :/me _ MrDestructoid \ud83d\udc1d : ".encode("utf8") + Message.encode("utf8") + u" \ud83d\udc1d \r\n".encode("utf8"))  # envoie message
             print("Envoyé : " + Message.encode("utf8"))
 
 if 1:
@@ -256,8 +270,6 @@ if 1:
     followers = []
 
     lcd_i2c.main()
-    logfile = open("chat.log", "a")
-    logfile.write(time.ctime() + " $ " + "Nouvelle connexion \r\n")
     connection()
     threading.Thread(target=recurrence).start()
     threading.Thread(target=newchat).start()
@@ -296,7 +308,7 @@ if 1:
                 ###______Commandes______###
 
             try:
-                send(CustMess[text.split(" ")[0].decode("utf8")][0])
+                send(CustMess[text.split(" ")[0].decode("utf8")])
             except KeyError:
                 pass
     
@@ -498,8 +510,7 @@ if 1:
             if "!refresh" in text.split(" ")[0]:
                 refreshjson()
     
-            if "!addquote" in text.split(" ")[0] and len(text.split(" ")) > 1:
-                global quotes
+            if "!addquote" in text.split(" ")[0] and len(text.split(" ")) > 1 and user in modos:
                 quote = ""
                 quote = text.split("!addquote ")[1]
                 quotes.append(quote.decode('utf8'))
@@ -622,6 +633,16 @@ if 1:
                 send("Stream up depuis " + up)
                 del up
                 del uptime
+
+            if "xbox" in text and "PC" in text:
+                send("/timeout "+user+" 1 Ce debat n'a pas lieu ici... Kappa pc master race... en toute objectivité Kappa")
+            
+            if cmp(text.split(" "), ["cheat", "hack", "vac", "ricki", "shaiiko"])>1:
+                send("/timeout "+ user+" 1 Appologie du hack (timeout visant a supprimer le message menant a des debats inutiles et sans fin) ")
+
+            if "!addcmd" in text.split(" ")[0] and (user in modos or user == elemzje) and len(text.split(" ")) > 3:
+                CustMess[text.split(" ")[1]] = " ".join(text.split(" ")[2:])
+                savejson()
 
     except KeyboardInterrupt:
         stop = True

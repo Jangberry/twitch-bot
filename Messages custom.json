@@ -1,5 +1,7 @@
 {
-    "!_! exemple (voila la syntaxe a respecter pour les commandes custom)": ["Voila un exemple de text (qui se retrouvera dans le chat, si quelqu'un ecrit la commande ecrite avant les deux points)"],
-    "!_! et surtout, faut faire attention à " : ["ne pas oublier la virgule entre 2 commandes"],
-    "!test" : ["lol"]
+    "!_! exemple (voila la syntaxe a respecter pour les commandes custom) ": ["Voila un exemple de text (qui se retrouvera dans le chat, si quelqu'un ecrit la commande ecrite avant les deux points) attention, si il n'y a pas de ! ca marche aussi. pour que la commande marche, il faut que le(s) mot(s) clé soit en debut de message. une fois une modification effectué, il faut faire la commande !refresh dans le chat"],
+    "!_! et surtout, faut faire attention à " : ["ne pas oublier la virgule entre 2 commandes, les guillemets, et les crochets (les sauts de ligne etc ne sont pas obligatoire)"],
+    "!test" : ["test"],
+    "ping" : ["pong"],
+    "Kappa" : ["Kappa"]
 }
