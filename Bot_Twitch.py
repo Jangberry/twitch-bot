@@ -22,7 +22,10 @@ logfile = open("chat.log", "w")
 logfile.write(time.ctime() + " $ " + "Nouvelle connexion \r\n")
 
 def log(LOG):
-        logfile.write(time.ctime() + " $ " + LOG +"\r\n")
+    try:
+        logfile.write(time.ctime() + u" $ " + LOG +u"\r\n")
+    except Exception:
+        pass
 
 def connection():  # Connection au serveur + channel
         lcd_i2c.Afficher("Connexion...")
@@ -110,7 +113,7 @@ def newstreaminfo():
         while pause == 0:
             if streamstate[u"stream"] != None and not streamON:
                 streamON = True
-                send(u"Stream on \ud83d\udcfa sur le jeu " + streamstate[u"stream"][u"game"] +" avec le titre " + channelstate[u"stream"][u"channel"][u"status"])
+                send(u"Stream on \ud83d\udcfa sur le jeu " + streamstate[u"stream"][u"game"] +u" avec le titre " + channelstate[u"stream"][u"channel"][u"status"])
             if streamstate[u"stream"] == None and streamON:
                 streamON = False
                 send(u"Fin de ce stream \ud83d\udcfa , merci a tous pour votre compagnie, et à la prochaine ;) n'hesitez à follow la chaine si le contenu vous plait, et que ca n'est pas deja fait :) Pour rester informé et etre au courant d'un prochain stream, allez suivre @elemzje sur twitter : https://twitter.com/Elemzje")
