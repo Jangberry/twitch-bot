@@ -1,4 +1,5 @@
 #-*- coding: utf-8 -*-
+#python27
 import importlib
 import json
 import random
@@ -7,7 +8,11 @@ import sys
 import threading
 import time
 import requests
-import lcd_i2c
+try:
+    import lcd_i2c
+except Exception:
+    print("Pas d'ecran detecte")
+    pass
 from info import *
 
 # Time
@@ -28,7 +33,10 @@ def log(LOG):
         pass
 
 def connection():  # Connection au serveur + channel
-        lcd_i2c.Afficher("Connexion...")
+        try:
+            lcd_i2c.Afficher("Connexion...")
+        except Exception:
+            pass
         print("connecting...")
         try:
             s.connect(("irc.chat.twitch.tv", 6667))
@@ -40,7 +48,10 @@ def connection():  # Connection au serveur + channel
         print("joining channel " + CHANNEL)
         s.send("JOIN " + CHANNEL + "\r\n")
         print("Connected")
-        lcd_i2c.Afficher("Connected", sel)
+        try:
+            lcd_i2c.Afficher("Connected", sel)
+        except Exception:
+            pass
 
 def savejson():
         global infojson
@@ -251,7 +262,10 @@ if 1:
     channelstate = []
     followers = []
 
-    lcd_i2c.main()
+    try:
+        lcd_i2c.main()
+    except Exception:
+        pass
     connection()
     threading.Thread(target=recurrence).start()
     threading.Thread(target=newchat).start()
@@ -303,7 +317,6 @@ if 1:
                     send(u"Voici les quotes, pour en citer une, merci d'indiquer son numero : \"" + "\", \"".join(quotes)+"\"")
                     pass
                 else:
-                    quote = quote.split("\r")[0]
                     if "quote" in quote:
                         send("veuillez indiquer quelle quote vous voullez")
                         pass
@@ -320,76 +333,11 @@ if 1:
                             print(e)
                             pass
     
-            if user == "lawry25" and lawry:
-                send(Kappa)
-                lcd_i2c.Afficher("Kappa  " + str(sel), "Vive mistercraft")
-                if "stop kappa" in text:
-                    lawry = False
-            if "reKappa" in text:
-                lawry = True
-    
             if "salut" in text and "@mistercraft38" in text:
                 send("sckHLT ations camarade !")
     
             if ((" vas " in text or " vas-" in text) and "comment" in text) and "@mistercraft38" in text:
                 send("Je vais tres bien, merci... mais c'est de la triche: je suis un bot...")
-    
-#            if " c " in text and not ("ctrl" in text or "ctl" in text or "contr" in text or " c e" in text) and sel < 20:
-#                if sel < 1:
-#                    send("Evite d'ecrire \"c\"... Ce serait plus agreable que tu ecrives \"c\'est\", \"ces\", \"ses\" ou encore \"sait\" @" + user)
-#                else:
-#                    send("*\"c'est\" ou \"ces\" @" + user)
-    
-#            if " pa " in text and sel < 20:
-#                if sel < 1:
-#                    send("Met un \"s\" à la fin de \"pas\" STP @" + user+" c'est plus agréable ;)")
-#                else:
-#                    send("*pas @" + user)
-    
-#            if " t " in text and sel < 20 and not " t e" in text:
-#                if sel < 1:
-#                    send("Peux-tu ecrire \"t'es\", \"thé\" ( Kappa ) ou \"tes\" ? Ce serait plus agreable @" + user)
-#                else:
-#                    send("*\"t'es\" ou \"tes\" @" + user)
-
-#            if " g " in text and sel < 20:
-#                if sel < 1:
-#                    send("Peux-tu ecrie \"j'ai\" en pleines lettres, c'est plsu joli :) @" + user)
-#                else:
-#                    send("*j'ai @" + user)
-
-#            if " chai pa" in text and sel < 20:
-#                if sel < 1:
-#                    send("Je t'encourage à érire \"je ne sais pas\" ou \"je sais pas\" au lieu de \"chai pas\", en plus d'etre plus joli, ca fait mine d'etre plus eduqué @" + user)
-#                else:
-#                    send("*je ne sais pas @" + user)
-    
-#            if " etai " in text and sel < 20:
-#                if sel < 1:
-#                    send("Peux-tu rajouter le \"s\" ou le \"t\" à la fin de \"étai\" ? ( petit rappel au cas où:  Le \"s\" c'est pour la premiere et deuxieme personne du singulier (je/tu) et le \"t\" pour la troisieme personne (il/elle/on)) @" + user)
-#                else:
-#                    send("*étais ou était @" + user)
-    
-#            if " bi1 " in text and sel < 20:
-#                if sel < 1:
-#                    send("Franchement ? Prend l'habitude d'ecrire correctement... \"bi1\" c'est optimisé pour les claviers T9, pas azerty, et sauf erreur, le 3310 n'est pas compatible avec twitch... Desolé pour la violence, mais ça m'insupporte... @" + user)
-#                else:
-#                    send("*bien @" + user)
-   
-#            if " tro " in text and sel < 20:
-#                if sel < 1:
-#                    send("Il y a un \"p\" à la fin de \"trop\". @" + user)
-#                else:
-#                    send("*trop @" + user)
-    
-#            if " g etai " in text:
-#                send("BON DIEU ! Rassure-moi, tu fait expres ? @" + user +" ca me ferai mal au cœur de savoir que quelqu'un aie une telle ignorance de l'existance du beschrelle")
-#    
-#            if " ct " in text and sel < 20:
-#                if sel < 1:
-#                    send("Tu peux t'appliquer s'il te plait ? C'est pas non plus super long d'ecrire \"c'était\" en toutes lettres, et c'est beaucoup plus agreable pour les personnes qui te lisent... Cependant, si tu ecrivais sur un clavier T9, je te pardonnerais... mais bon, Twitch n'existe pas sur 3310... @" + user)
-#                else:
-#                    send("*c'était @" + user)
     
             if ("blg" or "BLG" or "beluga" or "Beluga" or "béluga" or "Béluga") in text:
                 send("sckBLG sckBLG sckBLG")
@@ -414,7 +362,10 @@ if 1:
                 send("/me Sur demande de @" + user + " votre bot bien aimé s'en vas... au revoir. sckHLT ;) ")
                 wiz = 0
                 pause = True
-                lcd_i2c.Afficher("Pause du bot", str(sel))
+                try:
+                    lcd_i2c.Afficher("Pause du bot", str(sel))
+                except Exception:
+                    pass
                 while not "!bonjour" in text:
                     text = ""
                     recu = s.recv(2040)
@@ -437,52 +388,7 @@ if 1:
             if "!pseudo" in text and len(text.split(" ")) < 2:
                 send("il était une fois, dans une lointaine contrée naz.. eu non.. il  était une fois, en alsace, un jeune CM1 prénomé Bryan (brillant... LOL). Lors d'une journée d'orage, il jouait avec ses amis. Il jouais au foot. L'orage n'etait pas habituel (ciel violet, pluie fine et tout le tralala). ...")
                 send("... Avec ses amis, ils s'amusaient à dire \"les elements se dechainent, les elements se déchainent\", ensuite, en classe, ils continuaient avec les elements, leur maîtresse dit \"oui bien l'element, il vas se calmer\". Depuis, element,est resté et s'est transformé en @elemzje. \"zje\" étant là uniquement, je cite, \"pour faire chier les gens\".")
-    
-#            if ("!saler" or "!sale" or "!salé") in text:
-#                sel = sel + 50
-#                grains = grains + 50
-#                send("Le niveau de PJSalt est reglé à " + str(sel))
-#                if grains > 1000:
-#                    grains = grains - 50
-#                lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
-#    
-#            if "!sel" in text:
-#                send("Le niveau de PJSalt actuel est de " + str(sel))
-#                lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
-#    
-#            if ("!sucre" or "!sucré" or "!sucrer") in text:
-#                sel = sel - 50
-#                grains = grains + 50
-#                send("Le niveau de PJSalt est reglé à " + str(sel))
-#                if grains > 1000:
-#                    grains = grains - 50
-#                lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
-    
-#            if (" con " or " merde " or " chiant ") in text:
-#                sel = sel + 1
-#                if "Kappa" in text or "<3" in text:
-#                    sel = sel - 6
-#                    grains = grains - 5
-#                elif "mistercraft" in text:
-#                    sel = sel + 10
-#                grains = grains + 1
-#                print(str(sel))
-#                if grains > 1000:
-#                    send("c'est le grain de sel de @" + user +" qui fait déborder le vase... sel reinitialisé à 20")
-#                    sel = 20
-#                lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
-    
-#            if (" amour " or " aime " or "<3" or "Kappa") in text:
-#                sel = sel - len(text.split("Kappa"))
-#                sel = sel - len(text.split("<3"))
-#                sel = sel - 2
-#                print(str(sel))
-#                grains = grains + 2
-#                if grains > 1000:
-#                    send("c'est le grain de sucre de @" + user +" qui fait déborder le vase... sel reinitialisé à -20")
-#                    sel = -20
-#                lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
-    
+
             if "!refresh" in text.split(" ")[0]:
                 refreshjson()
     
@@ -494,7 +400,6 @@ if 1:
                 send("Quote enregistrée comme quote n°" + str(len(quotes)))
                 log("Quote n°" + str(len(quotes)) + " Quote : " + quote)
                 print("New quote (n°" + str(len(quotes)) + ") = " + quote)
-                lcd_i2c.AfficherLine("New quote:" + quote[:6], quote[6:] + "...")
     
             if "!tauhazard" in text.split(" ")[0]:
                 if len(users) == 0:
@@ -628,7 +533,10 @@ if 1:
             time.sleep(0.5)
             print('.')
         log("Extinction du Bot: KeyboardInterrupt \r\n")
-        lcd_i2c.Afficher("KeyboardInterrupt", "fin")
+        try:
+            lcd_i2c.Afficher("KeyboardInterrupt", "fin")
+        except Exception:
+            pass
         
     except ZeroDivisionError:
         savejson()
@@ -636,16 +544,19 @@ if 1:
         pause = True
         pass
 
-    #except Exception, e:
-    #    print(str(e))
-    #    log(time.ctime() + " $ " + "Crash : " + str(e))
-    #    send("Ce robot a crash... Merci d'en informer son créateur... J'AI ENVIE D'ETRE UN BOT SANS BUG !!! Erreur : " + str(e))
-    #    send("/disconnect")
-    #    savejson()
-    #    log(str(e))
-    #    lcd_i2c.Afficher("Bug:" + str(e))
-    #    stop = True
-    #    pause = True
+    except Exception, e:
+        print(str(e))
+        log(time.ctime() + " $ " + "Crash : " + str(e))
+        send("Ce robot a crash... Merci d'en informer son créateur... J'AI ENVIE D'ETRE UN BOT SANS BUG !!! Erreur : " + str(e))
+        send("/disconnect")
+        savejson()
+        log(str(e))
+        try:
+            lcd_i2c.Afficher("Bug:" + str(e))
+        except Exception:
+            pass
+        stop = True
+        pause = True
 
     finally:
         stop = True
