@@ -18,28 +18,11 @@ from info import *
 
 s = socket.socket()
 
-logfile = open("chat.log", "a+")
+logfile = open("chat.log", "w")
 logfile.write(time.ctime() + " $ " + "Nouvelle connexion \r\n")
 
 def log(LOG):
-        global logfile
-        try:
-            logfile.write(time.ctime() + " $ " + LOG.encode("utf8") +"\r\n")
-            if len(logfile.read().split("/n")) > 5000:
-                ancienlog = logfile.read().split("/n")[-500:]
-                logfile.close
-                logfile = open("chat.log", w)
-                logfile.write(ancienlog)
-                logfile.close
-                logfile = open("chat.log", "a+")
-                logfile.write(time.ctime() + " $ reprise du log suite a un espace de stockage plein \r\n")
-
-        except Exception, e:
-            print(str(e))
-            lcd_i2c.Afficher("Out of space")
-            logfile.close
-            logfile = open("log.txt", "w")
-            logfile.write(time.ctime() + " $ Reprise du log apres disque plein: " + LOG.encode('utf8') + " \r\n")
+        logfile.write(time.ctime() + " $ " + LOG +"\r\n")
 
 def connection():  # Connection au serveur + channel
         lcd_i2c.Afficher("Connexion...")
@@ -97,7 +80,7 @@ def channelInfo():
             # print(str(modos))
             chatnb = infos[u"chatter_count"]
             if len(infos[u"chatters"][u"staff"]) > 0:
-                send("OMG !!! There is someone from the twitch's staff ?!? Welcome @" +infos[u"chatters"][u"staff"][0].encode("utf8"))
+                send(u"OMG !!! There is someone from the twitch's staff ?!? Welcome @" +infos[u"chatters"][u"staff"][0].encode("utf8"))
 
         except Exception, e:
             print("channelInfo : " + str(e))
@@ -125,22 +108,17 @@ def newstreaminfo():
         time.sleep(1)
         streaminfo()
         while pause == 0:
-            try:
-             if streamstate[u"stream"] != None and not streamON:
+            if streamstate[u"stream"] != None and not streamON:
                 streamON = True
-                send("Stream on \ud83d\udcfa sur le jeu " + streamstate[u"stream"][u"game"].encode("utf8") +" avec le titre " + channelstate[u"stream"][u"channel"][u"status"].encode("utf8"))
-             if streamstate[u"stream"] == None and streamON:
+                send(u"Stream on \ud83d\udcfa sur le jeu " + streamstate[u"stream"][u"game"] +" avec le titre " + channelstate[u"stream"][u"channel"][u"status"])
+            if streamstate[u"stream"] == None and streamON:
                 streamON = False
-                send("Fin de ce stream \ud83d\udcfa , merci a tous pour votre compagnie, et à la prochaine ;) n'hesitez à follow la chaine si le contenu vous plait :) Pour rester informé et etre au courant d'un prochain stream, allez suivre @elemzje sur twitter : https://twitter.com/Elemzje")
-             if streamON:
+                send(u"Fin de ce stream \ud83d\udcfa , merci a tous pour votre compagnie, et à la prochaine ;) n'hesitez à follow la chaine si le contenu vous plait, et que ca n'est pas deja fait :) Pour rester informé et etre au courant d'un prochain stream, allez suivre @elemzje sur twitter : https://twitter.com/Elemzje")
+            if streamON:
                 if streamlast[u"game"] != streamstate[u"stream"][u"game"]:
-                        send("Nouveau jeu : \ud83c\udfae " + streamstate[u"stream"][u"game"].encode("utf8"))
+                        send(u"Nouveau jeu : \ud83c\udfae " + streamstate[u"stream"][u"game"])
           
-             streamlast = streamstate[u"stream"]
-            except Exception, e:
-                  print('newstraminfo :'+str(e))
-                  streaminfo()
-                  pass
+            streamlast = streamstate[u"stream"]
             try:
                 while streamlast == streamstate[u"stream"] and pause == 0 and stop == 0:
                         streaminfo()
@@ -152,7 +130,6 @@ def newstreaminfo():
 def newfollow():
         tempnew = []
         temp = ''
-        init = True
         time.sleep(5)
         streaminfo()
         follolast = followers[u'follows'][0]
@@ -166,14 +143,12 @@ def newfollow():
                         if i[u"notifications"]:
                             temp = temp + u" (qui a activé(e) les notifications, merci bien <3 ;) )"
                         tempnew.append(temp)
-                if len(tempnew) > 0 and not init:
+                if len(tempnew) > 0 and not len(tempnew) == 25:
                     if len(tempnew) == 1:
                         send(u"Bienvenue à @"+tempnew[0]+u". Merci pour ton follow et ton soutient, amuse-toi bien ;) <3")
                     else:
                         send(u" \ud83d\udc9a Bienvenue aux "+str(len(tempnew)).decode("utf8")+u" nouveaux follows: "+u" <3 ".join(tempnew)+u". Merci pour vos soutients \ud83d\udc9a , amusez vous bien ;)")
                 followlast = followers[u'follows'][0]
-                if init:
-                    init = False
                 try:
                     while not pause and not stop and followlast[u'user'][u'display_name'] == followers[u'follows'][0][u'user'][u'display_name']:
                         time.sleep(4)
@@ -238,12 +213,16 @@ def recurrence():
             pass
     
 def send(Message):  # Envoit de messages dans le Channel
-        log("Le bot envoie : " + Message)
+        try:
+                log("Le bot envoie : " + Message)
+        except Exception, e:
+                print(e)
+                pass
         if "/" in Message.split(" ")[0]:
             s.send("PRIVMSG " + CHANNEL + " :" + Message.encode("utf8") + "\r\n")  # envoie commande
             print("Commande : " + Message.encode("utf8"))
         else:
-            s.send("PRIVMSG " + CHANNEL + u" :/me _ MrDestructoid \ud83d\udc1d : ".encode("utf8") + Message.encode("utf8") + u" \ud83d\udc1d \r\n".encode("utf8"))  # envoie message
+            s.send(u"PRIVMSG ".encode("utf8") + CHANNEL.decode("ascii").encode("utf8") + u" :/me _ MrDestructoid \ud83d\udc1d : ".encode("utf8") + Message.encode("utf8") + u" \ud83d\udc1d \r\n".encode("utf8"))  # envoie message
             print("Envoyé : " + Message.encode("utf8"))
 
 if 1:
@@ -308,7 +287,7 @@ if 1:
                 ###______Commandes______###
 
             try:
-                send(CustMess[text.split(" ")[0].decode("utf8")])
+                send(CustMess[text.split(" ")[0]])
             except KeyError:
                 pass
     
@@ -318,7 +297,7 @@ if 1:
                 else:
                     quote = text.split("quote")[-1]
                 if "s" in quote:
-                    send("Voici les quotes, pour en citer une, merci d'indiquer son numero : \"" + "\", \"".join(quotes).encode("utf8")+"\"")
+                    send(u"Voici les quotes, pour en citer une, merci d'indiquer son numero : \"" + "\", \"".join(quotes)+"\"")
                     pass
                 else:
                     quote = quote.split("\r")[0]
@@ -328,7 +307,7 @@ if 1:
                     else:
                         try:
                             quote = int(quote)
-                            send(quotes[quote+1].encode("utf8"))
+                            send(quotes[quote+1])
                         except ValueError, e:
                             send("Veuillez entrer une valeur numerique (1, 2, 3, etc...) et non le contenu de la quote. Pour connaitre les quotes connues, tapez !quotes")
                             print(e)
@@ -345,9 +324,6 @@ if 1:
                     lawry = False
             if "reKappa" in text:
                 lawry = True
-
-            if "Kappa" in text and len(text) < 2:
-                send("/me Kappa")
     
             if "salut" in text and "@mistercraft38" in text:
                 send("sckHLT ations camarade !")
@@ -430,9 +406,6 @@ if 1:
             if "!team" in text.split(" ")[0]:
                 send("Elemzje fait partis de la team des 9L (9Lives), une team de full sckBGT")
     
-            if "!twitter" in text and len(text.split(" ")) < 2:
-                send("Bon... nightbot vas te donner le twitter d'@elemzje , donc le mien c'est @ mistercraft385 ;)")
-    
             if "!au revoir" in text and user in modos:
                 print("au revoir")
                 send("/me Sur demande de @" + user + " votre bot bien aimé s'en vas... au revoir. sckHLT ;) ")
@@ -462,50 +435,50 @@ if 1:
                 send("il était une fois, dans une lointaine contrée naz.. eu non.. il  était une fois, en alsace, un jeune CM1 prénomé Bryan (brillant... LOL). Lors d'une journée d'orage, il jouait avec ses amis. Il jouais au foot. L'orage n'etait pas habituel (ciel violet, pluie fine et tout le tralala). ...")
                 send("... Avec ses amis, ils s'amusaient à dire \"les elements se dechainent, les elements se déchainent\", ensuite, en classe, ils continuaient avec les elements, leur maîtresse dit \"oui bien l'element, il vas se calmer\". Depuis, element,est resté et s'est transformé en @elemzje. \"zje\" étant là uniquement, je cite, \"pour faire chier les gens\".")
     
-            if ("!saler" or "!sale" or "!salé") in text:
-                sel = sel + 50
-                grains = grains + 50
-                send("Le niveau de PJSalt est reglé à " + str(sel))
-                if grains > 1000:
-                    grains = grains - 50
-                lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
+#            if ("!saler" or "!sale" or "!salé") in text:
+#                sel = sel + 50
+#                grains = grains + 50
+#                send("Le niveau de PJSalt est reglé à " + str(sel))
+#                if grains > 1000:
+#                    grains = grains - 50
+#                lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
+#    
+#            if "!sel" in text:
+#                send("Le niveau de PJSalt actuel est de " + str(sel))
+#                lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
+#    
+#            if ("!sucre" or "!sucré" or "!sucrer") in text:
+#                sel = sel - 50
+#                grains = grains + 50
+#                send("Le niveau de PJSalt est reglé à " + str(sel))
+#                if grains > 1000:
+#                    grains = grains - 50
+#                lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
     
-            if "!sel" in text:
-                send("Le niveau de PJSalt actuel est de " + str(sel))
-                lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
+#            if (" con " or " merde " or " chiant ") in text:
+#                sel = sel + 1
+#                if "Kappa" in text or "<3" in text:
+#                    sel = sel - 6
+#                    grains = grains - 5
+#                elif "mistercraft" in text:
+#                    sel = sel + 10
+#                grains = grains + 1
+#                print(str(sel))
+#                if grains > 1000:
+#                    send("c'est le grain de sel de @" + user +" qui fait déborder le vase... sel reinitialisé à 20")
+#                    sel = 20
+#                lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
     
-            if ("!sucre" or "!sucré" or "!sucrer") in text:
-                sel = sel - 50
-                grains = grains + 50
-                send("Le niveau de PJSalt est reglé à " + str(sel))
-                if grains > 1000:
-                    grains = grains - 50
-                lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
-    
-            if (" con " or " merde " or " chiant ") in text:
-                sel = sel + 1
-                if "Kappa" in text or "<3" in text:
-                    sel = sel - 6
-                    grains = grains - 5
-                elif "mistercraft" in text:
-                    sel = sel + 10
-                grains = grains + 1
-                print(str(sel))
-                if grains > 1000:
-                    send("c'est le grain de sel de @" + user +" qui fait déborder le vase... sel reinitialisé à 20")
-                    sel = 20
-                lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
-    
-            if (" amour " or " aime " or "<3" or "Kappa") in text:
-                sel = sel - len(text.split("Kappa"))
-                sel = sel - len(text.split("<3"))
-                sel = sel - 2
-                print(str(sel))
-                grains = grains + 2
-                if grains > 1000:
-                    send("c'est le grain de sucre de @" + user +" qui fait déborder le vase... sel reinitialisé à -20")
-                    sel = -20
-                lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
+#            if (" amour " or " aime " or "<3" or "Kappa") in text:
+#                sel = sel - len(text.split("Kappa"))
+#                sel = sel - len(text.split("<3"))
+#                sel = sel - 2
+#                print(str(sel))
+#                grains = grains + 2
+#                if grains > 1000:
+#                    send("c'est le grain de sucre de @" + user +" qui fait déborder le vase... sel reinitialisé à -20")
+#                    sel = -20
+#                lcd_i2c.AfficherLine("Sel: " + str(sel), "Vive mistercraft")
     
             if "!refresh" in text.split(" ")[0]:
                 refreshjson()
@@ -532,9 +505,6 @@ if 1:
                     send("/timeout " + to + " 100")
                     send("Au plaisir @" + to)
 
-            if "!git" in text.split(" ")[0]:
-                send("Voici le lien du git-hub du code du bot, ce dernier est mis a jour environ une a deux fois par semaine, suivant ce que je peux lui apporter: https://github.com/Mistercraft38/twitch-bot")
-    
             if "!followcount" in text.split(" ")[0]:
                 send(str(followers[u"_total"])+" followers... ca fait beaucoup...")
 
@@ -582,7 +552,7 @@ if 1:
                         temp = temp + " "
                 temp = temp + str((FollowTime[1]%31536000%8640%3600%60)//1) + " secondes"
                 FollowTime.append(temp)
-                send("Tu follow la chaine depuis le "+FollowTime[0]+", soit "+FollowTime[2]+". <3 Ou "+str(FollowTime[1])+" secondes... "+str(FollowTime[1]/31536000)+" année(s) ou "+str((time.time()-FollowTime[1])/31536000)+" ans apres l'Epoch de Linux")
+                send("Tu follow la chaine depuis le "+FollowTime[0].decode("utf8")+", soit "+FollowTime[2]+". <3 Ou "+str(FollowTime[1])+" secondes... ")
                 if followN:
                     send("En plus il a activé les notifications... merci beaucoup @"+user)
                 del follow
@@ -634,7 +604,7 @@ if 1:
                 del up
                 del uptime
 
-            if "xbox" in text and "PC" in text:
+            if "xbox" in text and "pc" in text:
                 send("/timeout "+user+" 1 Ce debat n'a pas lieu ici... Kappa pc master race... en toute objectivité Kappa")
             
             if cmp(text.split(" "), ["cheat", "hack", "vac", "ricki", "shaiiko"])>1:
