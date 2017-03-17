@@ -122,14 +122,14 @@ def newstreaminfo():
         time.sleep(1)
         streaminfo()
         while pause == 0:
-            if streamstate[u"stream"] != None and not streamON:
+            if streamstate["stream"] != None and not streamON:
                 streamON = True
                 send(u"Stream on \ud83d\udcfa sur le jeu " + streamstate[u"stream"][u"game"] +u" avec le titre " + channelstate[u"stream"][u"channel"][u"status"])
-            if streamstate[u"stream"] == None and streamON:
+            if streamstate["stream"] == None and streamON:
                 streamON = False
                 send(u"Fin de ce stream \ud83d\udcfa , merci a tous pour votre compagnie, et à la prochaine ;) n'hesitez à follow la chaine si le contenu vous plait, et que ca n'est pas deja fait :) Pour rester informé et etre au courant d'un prochain stream, allez suivre @elemzje sur twitter : https://twitter.com/Elemzje")
             if streamON:
-                if streamlast[u"game"] != streamstate[u"stream"][u"game"]:
+                if streamlast["game"] != streamstate["stream"]["game"]:
                         send(u"Nouveau jeu : \ud83c\udfae " + streamstate[u"stream"][u"game"])
           
             streamlast = streamstate[u"stream"]
@@ -170,6 +170,51 @@ def newfollow():
                 except Exception:
                     pass
         
+def TimeTwitch(created_at, date = False):
+    depuis = created_at
+    debut = []
+    debut.append(int(depuis.split("-")[0]))
+    debut.append(int(depuis.split("-")[1]))
+    debut.append(int(depuis.split("-")[2].split("T")[0]))
+    debut.append(int(depuis.split("T")[1].split(":")[0]) + 1)
+    debut.append(int(depuis.split("T")[1].split(":")[1]))
+    debut.append(int(depuis.split("T")[1].split(":")[2].split("Z")[0]))
+    debut.append(0)
+    debut.append(0)
+    debut.append(0)
+    if date:
+        global TimeTwitchDate
+        TimeTwitchDate = time.strftime("%A %d %B %y à %H : %M : %S", debut)
+    debut = time.time() - time.mktime(debut)
+    depuis = ""
+    if debut > 31536000:
+        depuis = depuis + str(debut//31536000) +" an"
+        if FollowTime[1] > 63072000:
+            depuis = depuis + "s "
+        else:
+            depuis = depuis + " "
+    if debut % 31536000 > 86400:
+        depuis = depuis + str((debut % 31536000) // 86400) + " jour"
+        if debut % 31536000 > 172800:
+            depuis = depuis + "s "
+        else:
+            depuis = depuis + " "
+    if debut % 31536000 % 8640 > 3600:
+        depuis = depuis + str((debut % 31536000 %8640) // 3600) + " heure"
+        if (debut % 31536000 % 8640) // 3600 > 7200:
+            depuis = depuis + "s "
+        else:
+            depuis = depuis + " "
+    if debut % 31536000 % 8640 % 3600 > 60:
+        depuis = depuis + str((debut % 31536000 % 8640 %3600) // 60) + " minute"
+        if debut % 31536000 % 8640 % 3600 > 120:
+            depuis = depuis + "s "
+        else:
+            depuis = depuis + " "
+    depuis = depuis + str((debut % 31536000 % 8640 % 3600 % 60) // 1) + " secondes"
+    return depuis
+    del depuis
+    del debut
 
 def newchat():
         try:
@@ -187,7 +232,7 @@ def newchat():
                     else:
                         send("[" + str(chatnb) + " viewers (=)]")
                     chatlt = chatnb
-                    for i in range(0, 150, 5):
+                    for i in range(0, 200, 5):
                         time.sleep(5)
                         if stop != 0 or pause != 0:
                             break
@@ -204,7 +249,7 @@ def recurrence():
                         send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("utf8"))
                     except Exception:
                         pass
-                    for i in range(0, 300, 20):
+                    for i in range(0, 500, 20):
                         if pause == 0 and stop == 0:
                             channelInfo()
                             streaminfo()
@@ -353,10 +398,7 @@ if 1:
             if user == "wizebot" and wiz == 0:
                 send("bonjour @wizebot je viens en paix, pour ne pas t'assister. Je serai present ici pour te faire souffrir.")
                 wiz = 1
-    
-            if "!team" in text.split(" ")[0]:
-                send("Elemzje fait partis de la team des 9L (9Lives), une team de full sckBGT")
-    
+
             if "!au revoir" in text and user in modos:
                 print("au revoir")
                 send("/me Sur demande de @" + user + " votre bot bien aimé s'en vas... au revoir. sckHLT ;) ")
@@ -382,8 +424,8 @@ if 1:
                 send("/me Votre bot préféré ( Kappa ) est de retour !!! Merci à @" +user + " pour avoir aidé le phoenix à renaitre de ses cendres")
     
             if "!config" in text and len(text.split(" ")) < 2:
-                send("Tu sais que c'est marqué dans la description de la chaine ? Bon aller, vus que je suis gentil: ")
-                send("MONITOR : BenQ XL2411Z (144 Hz ! OMG!!!), HEADSET : HYPER X CLOUD II, MOUSE : STEELSERIES Rival (la 1ere), MOUSEPAD : STEELSERIES Qck Heavy (lol j'ai le même Kappa ), KEYBOARD : STEELSERIES APEX M800, MB : ASUS H81-PLUS, CPU : INTEL i5-4690, GPU : MSI GTX 970 4GB (j'ai 2x moins de vram mais bon... j'ai une 750Ti...), HDD : SEAGATE Barracuda 1 To, SDD : SEAGATE 250 Go (riche...), RAM : 2 x 4 Go CORSAIR Vengeance, PSU : CORSAIR 550W.")
+                send(u"Tu sais que c'est marqué dans la description de la chaine ? Bon aller, vus que je suis gentil: ")
+                send(u"MONITOR : BenQ XL2411Z (144 Hz ! OMG!!!), HEADSET : HYPER X CLOUD II, MOUSE : STEELSERIES Rival (la 1ere), MOUSEPAD : STEELSERIES Qck Heavy (lol j'ai le même Kappa ), KEYBOARD : STEELSERIES APEX M800, MB : ASUS H81-PLUS, CPU : INTEL i5-4690, GPU : MSI GTX 970 4GB (j'ai 2x moins de vram mais bon... j'ai une 750Ti...), HDD : SEAGATE Barracuda 1 To, SDD : SEAGATE 250 Go (riche...), RAM : 2 x 4 Go CORSAIR Vengeance, PSU : CORSAIR 550W.")
     
             if "!pseudo" in text and len(text.split(" ")) < 2:
                 send("il était une fois, dans une lointaine contrée naz.. eu non.. il  était une fois, en alsace, un jeune CM1 prénomé Bryan (brillant... LOL). Lors d'une journée d'orage, il jouait avec ses amis. Il jouais au foot. L'orage n'etait pas habituel (ciel violet, pluie fine et tout le tralala). ...")
@@ -418,56 +460,13 @@ if 1:
 
             if "!fc" in text.split(" ")[0]:
                 # send("42")
-                follow = requests.get("https://api.twitch.tv/kraken/users/"+user+"/follows/channels/"+CHANNEL.split('#')[1]+CLIENTID).json()
-                followN = follow[u"notifications"]
-                follow = follow[u"created_at"]
-                Follow = []
-                Follow.append(int(follow.split("-")[0]))
-                Follow.append(int(follow.split("-")[1]))
-                Follow.append(int(follow.split("-")[2].split("T")[0]))
-                Follow.append(int(follow.split("T")[1].split(":")[0])+1)
-                Follow.append(int(follow.split("T")[1].split(":")[1]))
-                Follow.append(int(follow.split("T")[1].split(":")[2].split("Z")[0]))
-                Follow.append(0)
-                Follow.append(0)
-                Follow.append(0)
-                FollowTime = [time.strftime("%A %d %B %y à %H : %M : %S", Follow)]
-                FollowTime.append(time.time()-time.mktime(Follow))
-                temp = ""
-                if FollowTime[1] > 31536000:
-                    temp = temp + str(FollowTime[1]//31536000) +" an"
-                    if FollowTime[1] > 63072000:
-                        temp = temp + "s "
-                    else:
-                        temp = temp + " "
-                if FollowTime[1]%31536000 > 86400:
-                    temp = temp + str((FollowTime[1] % 31536000)//86400)+" jour"
-                    if FollowTime[1]%31536000 > 172800:
-                        temp = temp + "s "
-                    else:
-                        temp = temp + " "
-                if FollowTime[1]%31536000%8640 > 3600:
-                    temp = temp + str((FollowTime[1]%31536000%8640)//3600)+" heure"
-                    if (FollowTime[1]%31536000%8640)//3600 > 7200:
-                        temp = temp + "s "
-                    else:
-                        temp = temp + " "
-                if FollowTime[1]%31536000%8640%3600 > 60:
-                    temp = temp + str((FollowTime[1]%31536000%8640%3600)//60) +" minute"
-                    if FollowTime[1]%31536000%8640%3600 > 120:
-                        temp = temp + "s "
-                    else:
-                        temp = temp + " "
-                temp = temp + str((FollowTime[1]%31536000%8640%3600%60)//1) + " secondes"
-                FollowTime.append(temp)
-                send("Tu follow la chaine depuis le "+FollowTime[0].decode("utf8")+", soit "+FollowTime[2]+". <3 Ou "+str(FollowTime[1])+" secondes... ")
+                temp = requests.get("https://api.twitch.tv/kraken/users/"+user+"/follows/channels/"+CHANNEL.split('#')[1]+CLIENTID).json()
+                temp = TimeTwitch(temp, True)
+                send("@"+user+" Tu follow la chaine depuis le "+TimeTwitchDate+", <3 soit "+temp+". <3")
                 if followN:
-                    send("En plus il a activé les notifications... merci beaucoup @"+user)
-                del follow
-                del followN
-                del Follow
-                del FollowTime
+                    send(u"En plus il a activé les notifications... merci beaucoup @"+user)
                 del temp
+                del TimeTwitchDate
 
             if "!epoch" in text.split(" ")[0]:
                 send("L'epoch de linux: un epoch est une date de reference utilise par plusieurs languages de programmation (y compris le python, language de ce bot) qui permet d'obtenir une valeur en seconde depuis cette date, sachant que cette date peux changer d'un OS a un autre. Sur linux (OS sur lequel tourne le bot), l'epoch est le 1er janvier 1970 à 00:00 UTC. Plus d'infos https://fr.wikipedia.org/wiki/Epoch")
@@ -476,44 +475,10 @@ if 1:
               if streamstate[u'stream'] == None:
                 send("Stream OFF.. et il n'y a pas de downtime Kappa")
               else:
-                up = streamstate["stream"]["created_at"]
-                uptime = []
-                uptime.append(int(up.split("-")[0]))
-                uptime.append(int(up.split("-")[1]))
-                uptime.append(int(up.split("-")[2].split("T")[0]))
-                uptime.append(int(up.split("T")[1].split(":")[0]) + 1)
-                uptime.append(int(up.split("T")[1].split(":")[1]))
-                uptime.append(int(up.split("T")[1].split(":")[2].split("Z")[0]))
-                uptime.append(0)
-                uptime.append(0)
-                uptime.append(0)
-                uptime = time.time() - time.mktime(uptime)
-                up = ""
-                if uptime % 31536000 > 86400:
-                    up = up + str((uptime % 31536000) // 86400) + " jour"
-                    if uptime % 31536000 > 172800:
-                        up = up + "s "
-                    else:
-                        up = up + " "
-                if uptime % 31536000 % 8640 > 3600:
-                    up = up + str((uptime % 31536000 %8640) // 3600) + " heure"
-                    if (uptime % 31536000 % 8640) // 3600 > 7200:
-                        up = up + "s "
-                    else:
-                        up = up + " "
-                if uptime % 31536000 % 8640 % 3600 > 60:
-                    up = up + str((uptime % 31536000 % 8640 %3600) // 60) + " minute"
-                    if uptime % 31536000 % 8640 % 3600 > 120:
-                        up = up + "s "
-                    else:
-                        up = up + " "
-                up = up + str((uptime % 31536000 % 8640 % 3600 % 60) // 1) + " secondes"
-                send("Stream up depuis " + up)
-                del up
-                del uptime
+                send("Stream up depuis " + TimeTwitch(streamstate["stream"]["created_at"]))
 
-            if "xbox" in text and "pc" in text:
-                send("/timeout "+user+" 1 Ce debat n'a pas lieu ici... Kappa pc master race... en toute objectivité Kappa")
+            if "xbox" in text.lower() and "pc" in text.lower():
+                send(u"/timeout "+user+u" 1 Ce débat n'a pas lieu ici... Kappa pc master race... en toute objectivité Kappa")
             
             if cmp(text.split(" "), ["cheat", "hack", "vac", "ricki", "shaiiko"])>1:
                 send("/timeout "+ user+" 1 Appologie du hack (timeout visant a supprimer le message menant a des debats inutiles et sans fin) ")
@@ -547,7 +512,7 @@ if 1:
     except Exception, e:
         print(str(e))
         log(time.ctime() + " $ " + "Crash : " + str(e))
-        send("Ce robot a crash... Merci d'en informer son créateur... J'AI ENVIE D'ETRE UN BOT SANS BUG !!! Erreur : " + str(e))
+        send(u"Ce robot a crash... Merci d'en informer son créateur... J'AI ENVIE D'ETRE UN BOT SANS BUG !!! Erreur : " + str(e))
         send("/disconnect")
         savejson()
         log(str(e))
