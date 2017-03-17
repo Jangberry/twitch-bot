@@ -171,7 +171,7 @@ def newfollow():
                     pass
         
 def TimeTwitch(created_at, date = False):
-    depuis = created_at
+    depuis = created_at.decode("utf8")
     debut = []
     debut.append(int(depuis.split("-")[0]))
     debut.append(int(depuis.split("-")[1]))
@@ -184,7 +184,7 @@ def TimeTwitch(created_at, date = False):
     debut.append(0)
     if date:
         global TimeTwitchDate
-        TimeTwitchDate = time.strftime("%A %d %B %y à %H : %M : %S", debut)
+        TimeTwitchDate = time.strftime("%A %d %B %y a %H : %M : %S", debut)
     debut = time.time() - time.mktime(debut)
     depuis = ""
     if debut > 31536000:
@@ -460,13 +460,14 @@ if 1:
 
             if "!fc" in text.split(" ")[0]:
                 # send("42")
-                temp = requests.get("https://api.twitch.tv/kraken/users/"+user+"/follows/channels/"+CHANNEL.split('#')[1]+CLIENTID).json()
-                temp = TimeTwitch(temp, True)
-                send("@"+user+" Tu follow la chaine depuis le "+TimeTwitchDate+", <3 soit "+temp+". <3")
-                if followN:
-                    send(u"En plus il a activé les notifications... merci beaucoup @"+user)
+                r = requests.get("https://api.twitch.tv/kraken/users/"+user+"/follows/channels/"+CHANNEL.split('#')[1]+CLIENTID).json()
+                temp = TimeTwitch(r[u"created_at"], True)
+                send("@"+user+" Tu follow la chaine depuis le "+TimeTwitchDate.encode("utf8") +", <3 soit "+temp.encode("utf8") +". <3")
+                if r[u"notifications"]:
+                    send(u"En plus tu a activé les notification, merci à toi <3")
                 del temp
                 del TimeTwitchDate
+                del r
 
             if "!epoch" in text.split(" ")[0]:
                 send("L'epoch de linux: un epoch est une date de reference utilise par plusieurs languages de programmation (y compris le python, language de ce bot) qui permet d'obtenir une valeur en seconde depuis cette date, sachant que cette date peux changer d'un OS a un autre. Sur linux (OS sur lequel tourne le bot), l'epoch est le 1er janvier 1970 à 00:00 UTC. Plus d'infos https://fr.wikipedia.org/wiki/Epoch")
@@ -475,7 +476,7 @@ if 1:
               if streamstate[u'stream'] == None:
                 send("Stream OFF.. et il n'y a pas de downtime Kappa")
               else:
-                send("Stream up depuis " + TimeTwitch(streamstate["stream"]["created_at"]))
+                send("Stream up depuis " + TimeTwitch(streamstate["stream"]["created_at"].encode("utf8")))
 
             if "xbox" in text.lower() and "pc" in text.lower():
                 send(u"/timeout "+user+u" 1 Ce débat n'a pas lieu ici... Kappa pc master race... en toute objectivité Kappa")
@@ -502,14 +503,8 @@ if 1:
             lcd_i2c.Afficher("KeyboardInterrupt", "fin")
         except Exception:
             pass
-        
-    except ZeroDivisionError:
-        savejson()
-        stop = True
-        pause = True
-        pass
 
-    except Exception, e:
+    except ZeroDivisionError, e:
         print(str(e))
         log(time.ctime() + " $ " + "Crash : " + str(e))
         send(u"Ce robot a crash... Merci d'en informer son créateur... J'AI ENVIE D'ETRE UN BOT SANS BUG !!! Erreur : " + str(e))
