@@ -1,5 +1,6 @@
 #-*- coding: utf-8 -*-
 #python27
+from __future__ import print_function
 import importlib
 import json
 import random
@@ -23,7 +24,7 @@ from info import *
 
 s = socket.socket()
 
-logfile = open("chat.log", "w")
+logfile = open("chat.log", "a")
 logfile.write(time.ctime() + " $ " + "Nouvelle connexion \r\n")
 
 def log(LOG):
@@ -120,33 +121,33 @@ def newstreaminfo():
     streamON = False
     while stop == 0:
         time.sleep(1)
-        streaminfo()
-        while pause == 0:
-            if streamstate["stream"] != None and not streamON:
+        try:
+          streaminfo()
+          while pause == 0:
+            if streamstate[u"stream"] != None and not streamON:
                 streamON = True
                 send(u"Stream on \ud83d\udcfa sur le jeu " + streamstate[u"stream"][u"game"] +u" avec le titre " + channelstate[u"stream"][u"channel"][u"status"])
-            if streamstate["stream"] == None and streamON:
+            if streamstate[u"stream"] == None and streamON:
                 streamON = False
                 send(u"Fin de ce stream \ud83d\udcfa , merci a tous pour votre compagnie, et à la prochaine ;) n'hesitez à follow la chaine si le contenu vous plait, et que ca n'est pas deja fait :) Pour rester informé et etre au courant d'un prochain stream, allez suivre @elemzje sur twitter : https://twitter.com/Elemzje")
             if streamON:
-                if streamlast["game"] != streamstate["stream"]["game"]:
+                if streamlast[u"game"] != streamstate[u"stream"][u"game"]:
                         send(u"Nouveau jeu : \ud83c\udfae " + streamstate[u"stream"][u"game"])
-          
             streamlast = streamstate[u"stream"]
-            try:
-                while streamlast == streamstate[u"stream"] and pause == 0 and stop == 0:
-                        streaminfo()
-                        time.sleep(4)
-            except Exception, e:
-                    streaminfo
-                    pass
+            while streamlast == streamstate[u"stream"] and pause == 0 and stop == 0:
+                time.sleep(2.5)
+        except Exception, e:
+            streaminfo
+            pass
+
 
 def newfollow():
+        global followers
         tempnew = []
         temp = ''
         time.sleep(5)
         streaminfo()
-        follolast = followers[u'follows'][0]
+        follolast = followers[u'follows'][0][u"user"][u"_id"]
         while not stop:
             time.sleep(1)
             while not pause:
@@ -157,16 +158,15 @@ def newfollow():
                         if i[u"notifications"]:
                             temp = temp + u" (qui a activé(e) les notifications, merci bien <3 ;) )"
                         tempnew.append(temp)
-                if len(tempnew) > 0 and not len(tempnew) == 25:
+                if len(tempnew) > 0 and len(tempnew) < 25:
                     if len(tempnew) == 1:
                         send(u"Bienvenue à @"+tempnew[0]+u". Merci pour ton follow et ton soutient, amuse-toi bien ;) <3")
                     else:
                         send(u" \ud83d\udc9a Bienvenue aux "+str(len(tempnew)).decode("utf8")+u" nouveaux follows: "+u" <3 ".join(tempnew)+u". Merci pour vos soutients \ud83d\udc9a , amusez vous bien ;)")
-                followlast = followers[u'follows'][0]
+                followlast = followers[u'follows'][0][u"user"][u"_id"]
                 try:
-                    while not pause and not stop and followlast[u'user'][u'display_name'] == followers[u'follows'][0][u'user'][u'display_name']:
-                        time.sleep(4)
-                        streaminfo
+                    while not pause and not stop and followlast == followers[u'follows'][0][u"user"][u"_id"]:
+                        time.sleep(2.5)
                 except Exception:
                     pass
         
@@ -221,7 +221,6 @@ def newchat():
             time.sleep(5)
             streaminfo()
             chatlt = 0
-            followlast = followers[u'follows'][0]
             while stop == 0:
                 time.sleep(1)
                 while pause == 0:
@@ -232,7 +231,7 @@ def newchat():
                     else:
                         send("[" + str(chatnb) + " viewers (=)]")
                     chatlt = chatnb
-                    for i in range(0, 200, 5):
+                    for i in range(0, 300, 5):
                         time.sleep(5)
                         if stop != 0 or pause != 0:
                             break
@@ -249,20 +248,10 @@ def recurrence():
                         send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("utf8"))
                     except Exception:
                         pass
-                    for i in range(0, 500, 20):
+                    for i in range(0, 600, 20):
                         if pause == 0 and stop == 0:
                             channelInfo()
                             streaminfo()
-                        else:
-                            break
-                        if pause == 0 and stop == 0:
-                            time.sleep(5)
-                        else:
-                            break
-                        if pause == 0 and stop == 0:
-                            time.sleep(5)
-                        else:
-                            break
                         if pause == 0 and stop == 0:
                             time.sleep(5)
                         else:
@@ -273,10 +262,10 @@ def recurrence():
     
 def send(Message):  # Envoit de messages dans le Channel
         try:
-                log("Le bot envoie : " + Message)
+            log("Le bot envoie : " + Message)
         except Exception, e:
-                print(e)
-                pass
+            print(e)
+            pass
         if "/" in Message.split(" ")[0]:
             s.send("PRIVMSG " + CHANNEL + " :" + Message.encode("utf8") + "\r\n")  # envoie commande
             print("Commande : " + Message.encode("utf8"))
@@ -306,6 +295,11 @@ if 1:
     streamstate = []
     channelstate = []
     followers = []
+    raffle = False
+    raffleusr = [None]
+    framboise = False
+    roulette = False
+    barillet = [False, False, False, False, False, False, 0]
 
     try:
         lcd_i2c.main()
@@ -318,13 +312,17 @@ if 1:
     threading.Thread(target=newfollow).start()
     channelInfo()
 
-    arret = False
     try:
         while 1:
     
             text = ""
             user = ""
-            recu = s.recv(2040)
+            try:
+                recu = s.recv(2040)
+            except Exception, e:
+                print(type(e)+str(e))
+                print("/n /n /!\\")
+                break
     
             if "PING" in recu:  # pong
                 rep = recu.split(":")[1]
@@ -339,9 +337,7 @@ if 1:
                 text = recu.split("PRIVMSG "+CHANNEL+" :")[1].split("\r\n")[0]
                 print(user + " : " + text)  #console
                 log(user + " : " + text)    #log
-        
-            elif "RECONNECT" in recu:
-                1/0
+
             else:
                 log("message impossible a interpreter : /r/n        "+recu)
                 print("Recu :"+recu)
@@ -378,22 +374,25 @@ if 1:
                             print(e)
                             pass
     
-            if "salut" in text and "@mistercraft38" in text:
+            if "salut" in text and NICK in text:
                 send("sckHLT ations camarade !")
     
-            if ((" vas " in text or " vas-" in text) and "comment" in text) and "@mistercraft38" in text:
+            if ((" vas " in text or " vas-" in text) and "comment" in text) and NICK in text:
                 send("Je vais tres bien, merci... mais c'est de la triche: je suis un bot...")
     
-            if ("blg" or "BLG" or "beluga" or "Beluga" or "béluga" or "Béluga") in text:
+            if "blg" in text or "BLG" in text or "beluga" in text or "Beluga" in text or "béluga" in text or "Béluga" in text:
                 send("sckBLG sckBLG sckBLG")
     
-            if ("HLT" in text or "salut" in text) and user != "mistercraft38":
+            if ("HLT" in text or "salut" in text) and user != NICK:
                 send("sckHLT @" + user)
     
             if "!to " in text and user in modos:
                 print('to')
                 if "!to" in text.split(" ")[0] and len(text.split(" ")) > 2:
-                    send("/timeout " + text.split(" ")[1] + " " + text.split(" ")[2])
+                    if len(text.split(" ")) == 3:
+                        send("/timeout " + text.split(" ")[1] + " " + text.split(" ")[2])
+                    else:
+                        send("/timeout " + text.split(" ")[1] + " " + text.split(" ")[2]+" ".join(text.split(" ")[3:]))
     
             if user == "wizebot" and wiz == 0:
                 send("bonjour @wizebot je viens en paix, pour ne pas t'assister. Je serai present ici pour te faire souffrir.")
@@ -401,7 +400,7 @@ if 1:
 
             if "!au revoir" in text and user in modos:
                 print("au revoir")
-                send("/me Sur demande de @" + user + " votre bot bien aimé s'en vas... au revoir. sckHLT ;) ")
+                send(u"/me Sur demande de @" + user + u" votre bot bien aimé s'en vas... au revoir. sckHLT ;) ")
                 wiz = 0
                 pause = True
                 try:
@@ -421,7 +420,7 @@ if 1:
                         rep = recu.split(":")[1]
                         s.send("PONG :" + rep + "\r\n")
                 pause = False
-                send("/me Votre bot préféré ( Kappa ) est de retour !!! Merci à @" +user + " pour avoir aidé le phoenix à renaitre de ses cendres")
+                send(u"/me Votre bot préféré ( Kappa ) est de retour !!! Merci à @" +user + u" pour avoir aidé le phoenix à renaitre de ses cendres")
     
             if "!config" in text and len(text.split(" ")) < 2:
                 send(u"Tu sais que c'est marqué dans la description de la chaine ? Bon aller, vus que je suis gentil: ")
@@ -477,16 +476,65 @@ if 1:
                 send("Stream OFF.. et il n'y a pas de downtime Kappa")
               else:
                 send("Stream up depuis " + TimeTwitch(streamstate["stream"]["created_at"].encode("utf8")))
-
-            if "xbox" in text.lower() and "pc" in text.lower():
-                send(u"/timeout "+user+u" 1 Ce débat n'a pas lieu ici... Kappa pc master race... en toute objectivité Kappa")
-            
-            if cmp(text.split(" "), ["cheat", "hack", "vac", "ricki", "shaiiko"])>1:
-                send("/timeout "+ user+" 1 Appologie du hack (timeout visant a supprimer le message menant a des debats inutiles et sans fin) ")
+   
+            for i in ["cheat", "hack", "vac"]:
+                if i in text:
+                    send("/timeout "+ user+" 1 Appologie du hack (timeout visant a supprimer le message menant a des debats inutiles et sans fin) ")
 
             if "!addcmd" in text.split(" ")[0] and (user in modos or user == elemzje) and len(text.split(" ")) > 3:
                 CustMess[text.split(" ")[1]] = " ".join(text.split(" ")[2:])
                 savejson()
+
+            if "!newraffle" in text.split(" ")[0] and not raffle and (user in modos or user == 'elemzje'):
+                raffleusr = []
+                raffle = True
+                send(u"Début de la raffle, tapez \"!raffle\" dans le chat pour participer")
+
+            if "!raffle" == text.split(" ")[0] and raffle and not user in raffleusr:
+                raffleusr.append(user)
+
+            if "!raffleend" in text.split(" ")[0] and raffle and (user in modos or user == 'elemzje'):
+                raffle = False
+                send(u"Fin de la raffle, il y a "+str(len(raffleusr))+u" participants.")
+
+            if "!raffledraw" in text.split(" ")[0] and not raffle and (user in modos or user == 'elemzje') and len(raffleusr) > 0:
+                send(u"Tirage au sort d'une personne parmis les "+str(len(raffleusr))+u" participants")
+                raffledraw = raffleusr[random.randint(0, len(raffleusr)-1)]
+                send(raffledraw + u" à l'honneur d'avoir été tiré au sort, bravo à toi ;)")
+
+            if "!roulette" in text.split(' ')[0]:
+                if ("francais" in text.split('!roulette')[1] or "français" in text.split('!roulette')[1]) and not roulette:
+                    send(u"Départ de la roulette francaise (parce-qu'on joue avec un LFP586) vous devez d'abord remplir le barillet, tapez !barillet remplir (attention, si vous le faites plusieurs fois, il y aura plusieurs balles...), ensuite, tapez !roulette pour tirer (ne vous inquétez pas, vous avez un GILAYY, ça coupe juste un peu le souflle...). Si un coup part, vous devez reremplir le barillet. Faites \"!roulette stop\" pour ranger cette arme..")
+                    send(u"Ce jeu est aussi parfois appelé \"test de confiance du GIGN\"")
+                    roulette = True
+                elif "remplir" in text.split("!roulette")[1] and roulette:
+                    temp = random.randint(0, 5)
+                    continuer = True
+                    while continuer:
+                        if not barillet[temp]:
+                            barillet[temp] = True
+                            send(u"Une balle à été placé dans une chambre aleatoire du barillet")
+                            continuer = False
+                        elif barillet[:5] == [True, True, True, True, True, True]:
+                            send("Le barillet est plein")
+                            continuer = False
+                        else:
+                            temp = random.randint(0, 5)
+                    print(barillet)    
+                elif "stop" in text.split("!roulette")[1] and roulette:
+                    roulette = False
+                    barillet = [False, False, False, False, False, False, 0]
+                    send(u"Bon... on arette de jouer.. on risquerai de blesser quelqu'un...")
+                elif roulette:
+                    if barillet[barillet[6]]:
+                        send(u"PAN")
+                        barillet[barillet[6]] = False
+                        send(u"/timeout "+user+u" "+str(random.randint(10, 45))+u" Ourf.. ce tir a fait mal, il vas vous falloir du temps pour reprendre votre souffle...")
+                    else:
+                        send(u"Click")
+                    barillet[6] = barillet[6] + 1
+                    if barillet[6] > 5:
+                        barillet[6] = 0
 
     except KeyboardInterrupt:
         stop = True
@@ -495,9 +543,9 @@ if 1:
         send("/disconnect")
         savejson
         print("En attente de la fin des threads...")
-        for i in range(0, 8):
-            time.sleep(0.5)
-            print('.')
+        for i in range(0, 5):
+            time.sleep(1)
+            print(".")
         log("Extinction du Bot: KeyboardInterrupt \r\n")
         try:
             lcd_i2c.Afficher("KeyboardInterrupt", "fin")
