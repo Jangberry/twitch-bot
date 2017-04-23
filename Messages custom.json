@@ -1,7 +1,1 @@
-{
-    "!_! exemple (voila la syntaxe a respecter pour les commandes custom) ": ["Voila un exemple de text (qui se retrouvera dans le chat, si quelqu'un ecrit la commande ecrite avant les deux points) attention, si il n'y a pas de ! ca marche aussi. pour que la commande marche, il faut que le(s) mot(s) clé soit en debut de message. une fois une modification effectué, il faut faire la commande !refresh dans le chat"],
-    "!_! et surtout, faut faire attention à " : ["ne pas oublier la virgule entre 2 commandes, les guillemets, et les crochets (les sauts de ligne etc ne sont pas obligatoire)"],
-    "!test" : ["test"],
-    "ping" : ["pong"],
-    "Kappa" : ["Kappa"]
-}
+{"!twitter": "Vous pouvez suivre @elemzje sur twitter: https://twitter.com/Elemzje", "Kappa": "Kappa", "ping": "pong", "!sensi": "400 dpi / 7 Horizontal / 7 Vertical / 80 dans le viseur (ads)", "v": "V for victory \ud83d\udc1d \ud83d\udc1d \ud83d\udc1d \ud83d\udc1d", "!yt": "Suivez @elemzje sur Youtube : https://www.youtube.com/channel/UCxNRKr5ZEdS2iNkQuc8LVhw", "!smurf": "Vous pouvez ajouter le smurf d'@elemzje : lynge_- sur Uplay", "!git": "Voici le lien du git-hub du bot, ce dernier est mis a jour environ une a deux fois par semaine, suivant ce que je peux lui apporter: https://github.com/Mistercraft38/twitch-bot n'h\u00e9sitez pas a proposer des modifications :)", "!epoch" : "L'epoch de linux: un epoch est une date de reference utilise par plusieurs languages de programmation (y compris le python, language de ce bot) qui permet d'obtenir une valeur en seconde depuis cette date, sachant que cette date peux changer d'un OS a un autre. Sur linux (OS sur lequel tourne le bot), l'epoch est le 1er janvier 1970 à 00:00 UTC. Plus d'infos https://fr.wikipedia.org/wiki/Epoch"}

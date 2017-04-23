@@ -93,12 +93,15 @@ def channelInfo():
             # print(str(users))
             modos = infos[u"chatters"][u"moderators"] + infos[u"chatters"][u"global_mods"] + infos[u"chatters"][u"staff"] + infos[u"chatters"][u"admins"]
             # print(str(modos))
+            chatters = users + modos
+            if 'notch' in chatters:
+                send("hlepfbfofdjfofhdocehfodbdfo")
+                send("Hi @notch ... no.. I'm not a strange bot.. I'm... diferent... Sooo glad to see you, and thanks a lot for your game ;) Can you learn me how to code ?")
             chatnb = infos[u"chatter_count"]
             if len(infos[u"chatters"][u"staff"]) > 0:
                 send(u"OMG !!! There is someone from the twitch's staff ?!? Welcome @" +infos[u"chatters"][u"staff"][0].encode("utf8"))
 
-        except Exception, e:
-            print("channelInfo : " + str(e))
+        except Exception:
             pass
 
 def streaminfo():
@@ -113,7 +116,6 @@ def streaminfo():
         followers = requests.get("https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1] + "/follows" + CLIENTID).json()
         retry = False
       except Exception, e:
-        print("Stream info :" + str(e))
         pass
 
 def newstreaminfo():
@@ -240,7 +242,7 @@ def newchat():
             pass
 
 def recurrence():
-        try:
+        #try:
             while stop == 0:
                 time.sleep(1)
                 while pause == 0 and stop == 0:
@@ -256,9 +258,9 @@ def recurrence():
                             time.sleep(5)
                         else:
                             break
-        except Exception, e:
-            print("reccurence: " + str(e))
-            pass
+        #except Exception, e:
+            #print("reccurence: " + str(e))
+            #pass
     
 def send(Message):  # Envoit de messages dans le Channel
         try:
@@ -270,7 +272,7 @@ def send(Message):  # Envoit de messages dans le Channel
             s.send("PRIVMSG " + CHANNEL + " :" + Message.encode("utf8") + "\r\n")  # envoie commande
             print("Commande : " + Message.encode("utf8"))
         else:
-            s.send(u"PRIVMSG ".encode("utf8") + CHANNEL.decode("ascii").encode("utf8") + u" :/me _ MrDestructoid \ud83d\udc1d : ".encode("utf8") + Message.encode("utf8") + u" \ud83d\udc1d \r\n".encode("utf8"))  # envoie message
+            s.send(u"PRIVMSG ".encode("utf8") + CHANNEL + u" :/me _ MrDestructoid \ud83d\udc1d : ".encode("utf8") + Message.encode("utf8") + u" \ud83d\udc1d \r\n".encode("utf8"))  # envoie message
             print("Envoyé : " + Message.encode("utf8"))
 
 if 1:
@@ -299,7 +301,6 @@ if 1:
     raffleusr = [None]
     framboise = False
     roulette = False
-    barillet = [False, False, False, False, False, False, 0]
 
     try:
         lcd_i2c.main()
@@ -320,7 +321,8 @@ if 1:
             try:
                 recu = s.recv(2040)
             except Exception, e:
-                print(type(e)+str(e))
+                print(type(e))
+                print(str(e))
                 print("/n /n /!\\")
                 break
     
@@ -339,7 +341,7 @@ if 1:
                 log(user + " : " + text)    #log
 
             else:
-                log("message impossible a interpreter : /r/n        "+recu)
+                log("message impossible a interpreter : /r/n    "+recu)
                 print("Recu :"+recu)
     
                 ###______Commandes______###
@@ -459,17 +461,19 @@ if 1:
 
             if "!fc" in text.split(" ")[0]:
                 # send("42")
+                if len(text.split(" ")) > 1:
+                    user = text.split(" ")[1].split("@")[0]
                 r = requests.get("https://api.twitch.tv/kraken/users/"+user+"/follows/channels/"+CHANNEL.split('#')[1]+CLIENTID).json()
-                temp = TimeTwitch(r[u"created_at"], True)
-                send("@"+user+" Tu follow la chaine depuis le "+TimeTwitchDate.encode("utf8") +", <3 soit "+temp.encode("utf8") +". <3")
-                if r[u"notifications"]:
-                    send(u"En plus tu a activé les notification, merci à toi <3")
-                del temp
-                del TimeTwitchDate
+                if r[u"status"]==404:
+                    send("Cet utilisateur ne suit pas elemzje : "+str(r[u"message"]))
+                else:
+                    temp = TimeTwitch(r[u"created_at"], True)
+                    send("@"+user+" follow la chaine depuis le "+TimeTwitchDate.encode("utf8") +", <3 soit "+temp.encode("utf8") +". <3")
+                    if r[u"notifications"]:
+                        send(u"En plus tu a activé les notification, merci à toi <3")
+                    del temp
+                    del TimeTwitchDate
                 del r
-
-            if "!epoch" in text.split(" ")[0]:
-                send("L'epoch de linux: un epoch est une date de reference utilise par plusieurs languages de programmation (y compris le python, language de ce bot) qui permet d'obtenir une valeur en seconde depuis cette date, sachant que cette date peux changer d'un OS a un autre. Sur linux (OS sur lequel tourne le bot), l'epoch est le 1er janvier 1970 à 00:00 UTC. Plus d'infos https://fr.wikipedia.org/wiki/Epoch")
 
             if "!uptime" in text.split(" ")[0]:
               if streamstate[u'stream'] == None:
@@ -506,6 +510,7 @@ if 1:
                 if ("francais" in text.split('!roulette')[1] or "français" in text.split('!roulette')[1]) and not roulette:
                     send(u"Départ de la roulette francaise (parce-qu'on joue avec un LFP586) vous devez d'abord remplir le barillet, tapez !barillet remplir (attention, si vous le faites plusieurs fois, il y aura plusieurs balles...), ensuite, tapez !roulette pour tirer (ne vous inquétez pas, vous avez un GILAYY, ça coupe juste un peu le souflle...). Si un coup part, vous devez reremplir le barillet. Faites \"!roulette stop\" pour ranger cette arme..")
                     send(u"Ce jeu est aussi parfois appelé \"test de confiance du GIGN\"")
+                    barillet = [False, False, False, False, False, False, 0]
                     roulette = True
                 elif "remplir" in text.split("!roulette")[1] and roulette:
                     temp = random.randint(0, 5)
@@ -515,7 +520,7 @@ if 1:
                             barillet[temp] = True
                             send(u"Une balle à été placé dans une chambre aleatoire du barillet")
                             continuer = False
-                        elif barillet[:5] == [True, True, True, True, True, True]:
+                        elif barillet[:6] == [True, True, True, True, True, True]:
                             send("Le barillet est plein")
                             continuer = False
                         else:
@@ -523,7 +528,7 @@ if 1:
                     print(barillet)    
                 elif "stop" in text.split("!roulette")[1] and roulette:
                     roulette = False
-                    barillet = [False, False, False, False, False, False, 0]
+                    del barillet
                     send(u"Bon... on arette de jouer.. on risquerai de blesser quelqu'un...")
                 elif roulette:
                     if barillet[barillet[6]]:
@@ -532,9 +537,15 @@ if 1:
                         send(u"/timeout "+user+u" "+str(random.randint(10, 45))+u" Ourf.. ce tir a fait mal, il vas vous falloir du temps pour reprendre votre souffle...")
                     else:
                         send(u"Click")
-                    barillet[6] = barillet[6] + 1
+                    barillet[6] += 1
                     if barillet[6] > 5:
                         barillet[6] = 0
+
+            if "!command" in text.split(" ")[0]:
+                temp = u"Voici les commandes possibles: "
+                for i in CustMess:
+                    temp += i + " "
+                send(temp)
 
     except KeyboardInterrupt:
         stop = True
