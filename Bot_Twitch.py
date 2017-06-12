@@ -29,8 +29,9 @@ logfile.write(time.ctime() + " $ " + "Nouvelle connexion \r\n")
 
 def log(LOG):
     try:
-        logfile.write(time.ctime() + u" $ " + LOG +u"\r\n")
+        logfile.write(time.ctime() + u" $ " + LOG.encode("utf8") +u"\r\n")
     except Exception:
+        print("Memoire pleinne : Log a vider d'urgence !!!")
         pass
 
 def connection():  # Connection au serveur + channel
@@ -272,7 +273,7 @@ def send(Message):  # Envoit de messages dans le Channel
             s.send("PRIVMSG " + CHANNEL + " :" + Message.encode("utf8") + "\r\n")  # envoie commande
             print("Commande : " + Message.encode("utf8"))
         else:
-            s.send(u"PRIVMSG ".encode("utf8") + CHANNEL + u" :/me _ MrDestructoid \ud83d\udc1d : ".encode("utf8") + Message.encode("utf8") + u" \ud83d\udc1d \r\n".encode("utf8"))  # envoie message
+            s.send(u"PRIVMSG ".encode("utf8") + CHANNEL + u" :/me _ sckELM \ud83d\udc1d : ".encode("utf8") + Message.encode("utf8") + u" \ud83d\udc1d \r\n".encode("utf8"))  # envoie message (MrDestructoid)
             print("Envoyé : " + Message.encode("utf8"))
 
 if 1:
@@ -320,15 +321,18 @@ if 1:
             user = ""
             try:
                 recu = s.recv(2040)
-            except Exception, e:
-                print(type(e))
-                print(str(e))
-                print("/n /n /!\\")
-                break
+            except Exception:
+                print('Reboot serveurs twitch')
+                log("Reboot serveurs twitch")
+                pause = True
+                s.close
+                time.sleep(5)
+                connection()
+                pause = False
+                pass
     
             if "PING" in recu:  # pong
-                rep = recu.split(":")[1]
-                s.send("PONG :" + rep + "\r\n")
+                s.send("PONG :" + recu.split(":")[1] + "\r\n")
                 stop = False
                 pause = False
                 log("PING de twitch")
@@ -341,7 +345,7 @@ if 1:
                 log(user + " : " + text)    #log
 
             else:
-                log("message impossible a interpreter : /r/n    "+recu)
+                log("message impossible a interpreter : \r\n"+recu)
                 print("Recu :"+recu)
     
                 ###______Commandes______###
@@ -361,12 +365,12 @@ if 1:
                     pass
                 else:
                     if "quote" in quote:
-                        send("veuillez indiquer quelle quote vous voullez")
+                        send(quotes[random.randint(0, len(quotes)-1)])
                         pass
                     else:
                         try:
                             quote = int(quote)
-                            send(quotes[quote+1])
+                            send(quotes[quote-1])
                         except ValueError, e:
                             send("Veuillez entrer une valeur numerique (1, 2, 3, etc...) et non le contenu de la quote. Pour connaitre les quotes connues, tapez !quotes")
                             print(e)
@@ -429,7 +433,7 @@ if 1:
                 send(u"MONITOR : BenQ XL2411Z (144 Hz ! OMG!!!), HEADSET : HYPER X CLOUD II, MOUSE : STEELSERIES Rival (la 1ere), MOUSEPAD : STEELSERIES Qck Heavy (lol j'ai le même Kappa ), KEYBOARD : STEELSERIES APEX M800, MB : ASUS H81-PLUS, CPU : INTEL i5-4690, GPU : MSI GTX 970 4GB (j'ai 2x moins de vram mais bon... j'ai une 750Ti...), HDD : SEAGATE Barracuda 1 To, SDD : SEAGATE 250 Go (riche...), RAM : 2 x 4 Go CORSAIR Vengeance, PSU : CORSAIR 550W.")
     
             if "!pseudo" in text and len(text.split(" ")) < 2:
-                send("il était une fois, dans une lointaine contrée naz.. eu non.. il  était une fois, en alsace, un jeune CM1 prénomé Bryan (brillant... LOL). Lors d'une journée d'orage, il jouait avec ses amis. Il jouais au foot. L'orage n'etait pas habituel (ciel violet, pluie fine et tout le tralala). ...")
+                send("Il était une fois, dans une lointaine contrée naz.. eu non.. il  était une fois, en alsace, un jeune CM1 prénomé Bryan. Lors d'une journée d'orage, il jouait avec ses amis. Il jouais au foot. L'orage n'etait pas habituel (ciel violet, pluie fine et tout le tralala). ...")
                 send("... Avec ses amis, ils s'amusaient à dire \"les elements se dechainent, les elements se déchainent\", ensuite, en classe, ils continuaient avec les elements, leur maîtresse dit \"oui bien l'element, il vas se calmer\". Depuis, element,est resté et s'est transformé en @elemzje. \"zje\" étant là uniquement, je cite, \"pour faire chier les gens\".")
 
             if "!refresh" in text.split(" ")[0]:
@@ -453,7 +457,7 @@ if 1:
                     to = users[random.randint(0, len(users))].encode('utf8')
                     send(to + " a été tiré au sort pour un to de 100 secondes. Un dernier mot ? tu as 10 secondes...")
                     time.sleep(10)
-                    send("/timeout " + to + " 100")
+                    send("/timeout " + to + u" 100 Desolé... cette commande est censé ne pas etre connue... je ne sais pas qui a hacké mon bot...")
                     send("Au plaisir @" + to)
 
             if "!followcount" in text.split(" ")[0]:
@@ -464,8 +468,11 @@ if 1:
                 if len(text.split(" ")) > 1:
                     user = text.split(" ")[1].split("@")[0]
                 r = requests.get("https://api.twitch.tv/kraken/users/"+user+"/follows/channels/"+CHANNEL.split('#')[1]+CLIENTID).json()
-                if r[u"status"]==404:
-                    send("Cet utilisateur ne suit pas elemzje : "+str(r[u"message"]))
+                if u'status'in r:
+                    if r[u"status"]==404:
+                        send("Cet utilisateur ne suit pas elemzje : "+str(r[u"message"]))
+                    else:
+                        send("Erreur inconue : " + str(r[u'status']))
                 else:
                     temp = TimeTwitch(r[u"created_at"], True)
                     send("@"+user+" follow la chaine depuis le "+TimeTwitchDate.encode("utf8") +", <3 soit "+temp.encode("utf8") +". <3")
