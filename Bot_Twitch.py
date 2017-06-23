@@ -22,7 +22,7 @@ from info import *
 
 #gamepad: \ud83c\udfae Coeur: \ud83d\udc9a t\u00e9l\u00e9 : \ud83d\udcfa abeille : \ud83d\udc1d
 
-s = socket.socket()
+
 
 logfile = open("chat.log", "a")
 logfile.write(time.ctime() + " $ " + "Nouvelle connexion \r\n")
@@ -35,6 +35,8 @@ def log(LOG):
         pass
 
 def connection():  # Connection au serveur + channel
+        global s
+        s = socket.socket()
         try:
             lcd_i2c.Afficher("Connexion...")
         except Exception:
