@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+#-*- coding: UTF8 -*-
 from __future__ import print_function
 import json
 import random
@@ -20,17 +20,18 @@ from info import *
 # time.strftime("https://docs.python.org/3/library/time.html#time.struct_time",
 # time.struct_time(["https://docs.python.org/3/library/time.html#time.strftime"]))
 
-#gamepad: \ud83c\udfae Coeur: \ud83d\udc9a t\u00e9l\u00e9 : \ud83d\udcfa abeille : \ud83d\udc1d
+#gamepad: \ud83c\udfae Coeur: \ud83d\udc9a tele : \ud83d\udcfa
+
+print("Initialization of variables and functions, and loading log...")
 
 
-
-logfile = codecs.open("chat.log", "a", "utf-8")
+logfile = codecs.open("chat.log", "a", "UTF8")
 #logfile = open("chat.log", "a")
 logfile.write(time.ctime() + " $ " + "Nouvelle connexion \r\n")
 
 def log(LOG):
     try:
-        logfile.write(time.ctime().decode("utf8") + u" $ " + LOG.decode("utf8") + u"\r\n")
+        logfile.write(time.ctime().decode("UTF8") + u" $ " + LOG + u"\r\n")
     except Exception, e:
         print("Erreur log "+str(e))
         pass
@@ -42,19 +43,21 @@ def connection():  # Connection au serveur + channel
         lcd_i2c.Afficher("Connexion...")
     except Exception:
         pass
-    print("connecting...")
+    print("Connecting...")
     try:
         s.connect(("irc.chat.twitch.tv", 6667))
     except Exception:
         pass
-    print("identifing with nickname: " + NICK)
+    print("Identifing with nickname: " + NICK)
     s.send("PASS " + PASS + "\r\n")
     s.send("NICK " + NICK + "\r\n")
-    print("joining channel " + CHANNEL)
+    print("Welcome message : \r\n"+s.recv(2040))
+    print("Joining " + CHANNEL)
     s.send("JOIN " + CHANNEL + "\r\n")
-    print("Connected")
+    print(s.recv(2040))
+    print("Connected to "+CHANNEL)
     try:
-        lcd_i2c.Afficher("Connected", sel)
+        lcd_i2c.Afficher("Connected")
     except Exception:
         pass
 
@@ -64,12 +67,10 @@ def savejson():
     jsoninfo = open("info.json", "w")
     jsoninfo.write(json.dumps(infojson))
     jsoninfo.close
-    jsoninfo = open("info.json", "r")
-    infojson = json.load(jsoninfo)
-    jsoninfo.close()
     CustMesstemp = CustMess
     CustMess = open("Messages custom.json", "w")
     CustMess.write(json.dumps(CustMesstemp))
+    CustMess.close()
     CustMess = CustMesstemp
     del CustMesstemp
 
@@ -91,22 +92,24 @@ def channelInfo():
     global users
     global modos
     global chatnb
-    try:
-        infos = requests.get("https://tmi.twitch.tv/group/user/" + CHANNEL.split("#")[1] + "/chatters").json()
-        users = infos[u"chatters"][u"viewers"]
-        # print(str(users))
-        modos = infos[u"chatters"][u"moderators"] + infos[u"chatters"][u"global_mods"] + infos[u"chatters"][u"staff"] + infos[u"chatters"][u"admins"]
-        # print(str(modos))
-        chatters = users + modos
-        if 'notch' in chatters:
-            send("hlepfbfofdjfofhdocehfodbdfo")
-            send("Hi @notch ... no.. I'm not a strange bot.. I'm... diferent... Sooo glad to see you, and thanks a lot for your game ;) Can you learn me how to code ? (by /w you know... i'm only a bot and i haven't as much memory as you can think...")
-        chatnb = infos[u"chatter_count"]
-        if len(infos[u"chatters"][u"staff"]) > 0:
-            send(u"OMG !!! There is someone from the twitch's staff ?!? Welcome @" +infos[u"chatters"][u"staff"][0].encode("utf8"))
-
-    except Exception:
-        pass
+    retry = True
+    while retry:
+        try:
+            infos = requests.get("https://tmi.twitch.tv/group/user/" + CHANNEL.split("#")[1] + "/chatters").json()
+            users = infos[u"chatters"][u"viewers"]
+            # print(str(users))
+            modos = infos[u"chatters"][u"moderators"] + infos[u"chatters"][u"global_mods"] + infos[u"chatters"][u"staff"] + infos[u"chatters"][u"admins"]
+            # print(str(modos))
+            chatters = users + modos
+            if 'notch' in chatters:
+                send("hlepfbfofdjfofhdocehfodbdfo")
+                send("Hi @notch ... no.. I'm not a strange bot.. I'm... diferent... Sooo glad to see you, and thanks a lot for your game ;) Can you learn me how to code ? (by /w you know... i'm only a bot and i haven't as much memory as you can think...")
+            chatnb = infos[u"chatter_count"]
+            if len(infos[u"chatters"][u"staff"]) > 0:
+                send(u"OMG !!! There is someone from the twitch's staff ?!? Welcome @" +infos[u"chatters"][u"staff"][0].encode("UTF8"))
+            retry = False
+        except Exception:
+            pass
 
 def PubSub():
     global CHANNELID
@@ -132,15 +135,13 @@ def streaminfo():
             streamstate = requests.get("https://api.twitch.tv/kraken/streams/" + CHANNEL.split("#")[1] + "?client_id="+CLIENTID).json()
             followers = requests.get(channelstate[u'_links'][u"follows"] + "?client_id=" + CLIENTID).json()
             retry = False
-        except Exception, e:
+        except Exception:
             pass
 
 def API():
-    streaminfo()
     streamlast = streamstate[u"stream"]
     streamON = True
     while not stop:
-        time.sleep(1)
         try:
             while not pause:
                 if streamstate[u"stream"] != None and not streamON:
@@ -164,34 +165,29 @@ def newfollow():
     global followers
     tempnew = []
     temp = ''
-    time.sleep(5)
-    streaminfo()
     followlast = followers[u'follows'][0][u"user"][u"_id"]
     while not stop:
         try:
-            time.sleep(1)
             while not pause:
                 tempnew = []
                 temp = ''
                 for i in followers[u'follows']:
-                    if i == followlast:
+                    if i[u"user"][u"_id"] == followlast:
                         break
                     temp = i[u"user"][u"display_name"]
                     if i[u"notifications"]:
-                        temp = temp + u" (qui a activé(e) les notifications, merci bien <3 ;) )"
+                        temp = temp + u" (qui a activé(e) les notifications, merci beaucoup ;) )"
                     tempnew.append(temp)
-                if len(tempnew) > 0 and len(tempnew) != 25:
+                del temp
+                if len(tempnew) > 0:
                     if len(tempnew) == 1:
                         send(u"Bienvenue à @"+tempnew[0]+u". Merci pour ton follow et ton soutient, amuse-toi bien ;) <3")
                     else:
-                        send(u" \ud83d\udc9a Bienvenue aux "+str(len(tempnew)).decode("utf8")+u" nouveaux follows: "+u" <3 ".join(tempnew)+u". Merci pour vos soutients \ud83d\udc9a , amusez vous bien ;)")
+                        send(u"Bienvenue aux "+str(len(tempnew))+u" nouveaux followers: "+u" <3 ".join(tempnew)+u". Merci pour vos soutients , amusez vous bien ;)")
+                del tempnew
                 followlast = followers[u'follows'][0][u"user"][u"_id"]
-                try:
-                    while not pause and not stop and followlast == followers[u'follows'][0][u"user"][u"_id"]:
-                        time.sleep(2.5)
-                except Exception, e:
-                    print("erreur newfollow: "+ str(e))
-                    pass
+                while (not pause and not stop) and followlast == followers[u'follows'][0][u"user"][u"_id"]:
+                    time.sleep(2.5)
         except Exception, e:
             print("erreur newfollow: "+ str(e))
             log("erreur newfollow: "+ str(e))
@@ -199,11 +195,11 @@ def newfollow():
 
 def TimeTwitch(created_at, date=False):
     try:
-        depuis = created_at.decode("utf8")
+        depuis = created_at.decode("UTF8")
         debut = []
         debut.append(int(depuis.split("-")[0]))
         debut.append(int(depuis.split("-")[1]))
-        debut.append(int(depuis.split("-")[2].split("T")[0]))
+        debu.append(int(depuis.split("-")[2].split("T")[0]))
         debut.append(int(depuis.split("T")[1].split(":")[0]) + 1)
         debut.append(int(depuis.split("T")[1].split(":")[1]))
         debut.append(int(depuis.split("T")[1].split(":")[2].split("Z")[0]))
@@ -250,17 +246,16 @@ def TimeTwitch(created_at, date=False):
         pass
 
 def newchat():
-    time.sleep(5)
-    streaminfo()
-    chatlt = 0
+    chatlt = chatnb
     while stop == 0:
         try:
-            time.sleep(1)
             while pause == 0:
                 if chatnb > chatlt:
                     send("[" + str(chatnb) + " viewers (+" + str(chatnb - chatlt) + ")]")
                 elif chatnb < chatlt:
                     send("[" + str(chatnb) + " viewers (" + str(chatnb - chatlt) + ")]")
+                elif chatnb == chatlt and chatnb == 2:
+                    pass
                 else:
                     send("[" + str(chatnb) + " viewers (=)]")
                 chatlt = chatnb
@@ -270,37 +265,45 @@ def newchat():
                         break
         except Exception, e:
             print("Probleme dans \"newchat\"" + str(e))
+            log("Probleme dans \"newchat\"" + str(e))
             pass
 
 def recurrence():
     while stop == 0:
         try:
-            time.sleep(1)
             while pause == 0 and stop == 0:
                 try:
-                    send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("utf8"))
+                    if chatnb != 2:
+                        send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("UTF8"))
                 except Exception:
                     pass
                 for i in range(0, 600, 20):
                     if pause == 0 and stop == 0:
                         channelInfo()
                         streaminfo()
+                        if chatnb == 2 and ("12:00:0" in time.ctime() or "00:00:0" in time.ctime()):
+                            print("### \r\nSaving log...")
+                            logfile.close()
+                            global logfile
+                            logfile = codecs.open("chat.log", "a", "UTF8")
+                            print("Log saved \r\n###")
                     if pause == 0 and stop == 0:
                         time.sleep(5)
                     else:
                         break
         except Exception, e:
-            print("reccurence: " + str(e))
+            print("recurrence: " + str(e))
+            log("Bug recurrence: " + str(e))
             pass
 
 def send(Message):  # Envoit de messages dans le Channel
     log("Le bot envoie : " + Message)
-    if "/" in Message.split(" ")[0]:
-        s.send("PRIVMSG " + CHANNEL + " :" + Message.encode("utf8") + "\r\n")  # envoie commande
-        print("Commande : " + Message.encode("utf8"))
+    if "/" in Message[0]:
+        s.send("PRIVMSG " + CHANNEL + " :" + Message.encode("UTF8") + "\r\n")  # envoie commande
+        print("Command : " + Message.encode("UTF8"))
     else:
-        s.send(u"PRIVMSG ".encode("utf8") + CHANNEL + u" :/me _ sckELM \ud83d\udc1d : ".encode("utf8") + Message.encode("utf8") + u" \ud83d\udc1d \r\n".encode("utf8"))  # envoie message (MrDestructoid)
-        print("Envoyé : " + Message.encode("utf8"))
+        s.send(u"PRIVMSG ".encode("UTF8") + CHANNEL + u" :/me MrDestructoid : ".encode("UTF8") + Message.encode("UTF8") + u" MrDestructoid \r\n".encode("UTF8"))  # envoie message (MrDestructoid)
+        print("Bot ("+NICK+"): " + Message.encode("UTF8"))
 
 # Variables pour fonctions
 jsoninfo = open("info.json", "r")
@@ -312,9 +315,7 @@ CustMess = json.load(CustMess)
 quotes = infojson[u'quotes']
 recurrenceMessages = infojson[u'reccurence']
 user = ''
-sel = -20
-grains = 0
-pause = False
+pause = True
 stop = False
 chatnb = 0
 users = []
@@ -325,17 +326,23 @@ followers = []
 raffle = False
 raffleusr = [None]
 roulette = False
+print("Collecting API's infos for "+CHANNEL.split('#')[-1]+"'s channel")
+streaminfo()
+channelInfo()
+print("Done")
 
 try:
     lcd_i2c.main()
 except Exception:
     pass
 connection()
+print("Starting bot's functionnalities...")
 threading.Thread(target=recurrence).start()
 threading.Thread(target=newchat).start()
 threading.Thread(target=API).start()
 threading.Thread(target=newfollow).start()
-channelInfo()
+pause = False
+print("Bot fully started, here's the chat : \r\n")
 try:
     while 1:
         text = ""
@@ -347,15 +354,14 @@ try:
             log("Reboot serveurs twitch")
             pause = True
             s.close
-            time.sleep(5)
+            del s
+            time.sleep(10)
             connection()
             pause = False
             pass
 
         if "PING" in recu:  # pong
             s.send("PONG :" + recu.split(":")[1] + "\r\n")
-            stop = False
-            pause = False
             log("PING de twitch")
 
         elif len(recu.split(":")) >= 3 and "PRIVMSG" in recu:  # séparation user/texte
@@ -367,7 +373,7 @@ try:
 
         else:
             log("message impossible a interpreter : \r\n"+recu)
-            print("Recu :"+recu)
+            print("Recu : \n\r"+recu)
 
                 ###______Commandes______###
 
@@ -402,16 +408,13 @@ try:
                         pass
 
         if "salut" in text and NICK in text:
-            send("sckHLT ations camarade !")
+            send("Salutations camarade !")
 
         if ((" vas " in text or " vas-" in text) and "comment" in text) and NICK in text:
             send(u"Je vais très bien, merci... mais c'est de la triche: je suis un bot...")
 
-        if "blg" in text or "BLG" in text or "beluga" in text or "Beluga" in text or "béluga" in text or "Béluga" in text:
-            send("sckBLG sckBLG sckBLG")
-
         if ("HLT" in text.split(" ")[0] or "salut" in text.split(" ")[0]) and user != NICK:
-            send("sckHLT @" + user)
+            send("Salut ! @" + user)
 
         if "!to " in text and user in modos:
             print('to')
@@ -424,11 +427,11 @@ try:
 
         if "!au revoir" in text and user in modos:
             print("au revoir")
-            send(u"/me Sur demande de @" + user + u" votre bot bien aimé s'en vas... au revoir. sckHLT ;) ")
+            send(u"/me Sur demande de @" + user + u" votre bot bien aimé s'en vas... au revoir ;) ")
             wiz = 0
             pause = True
             try:
-                lcd_i2c.Afficher("Pause du bot", str(sel))
+                lcd_i2c.Afficher("Pause du bot")
             except Exception:
                 pass
             while not "!bonjour" in text:
@@ -446,10 +449,6 @@ try:
             pause = False
             send(u"/me Votre bot préféré ( Kappa ) est de retour !!! Merci à @" +user + u" pour avoir aidé le phoenix à renaitre de ses cendres")
 
-        if "!config" in text and len(text.split(" ")) < 2:
-            send(u"Tu sais que c'est marqué dans la description de la chaine ? Bon aller, vus que je suis gentil: ")
-            send(u"MONITOR : BenQ XL2411Z (144 Hz ! OMG!!!), HEADSET : HYPER X CLOUD II, MOUSE : STEELSERIES Rival (la 1ere), MOUSEPAD : STEELSERIES Qck Heavy (lol j'ai le même Kappa ), KEYBOARD : STEELSERIES APEX M800, MB : ASUS H81-PLUS, CPU : INTEL i5-4690, GPU : MSI GTX 970 4GB, HDD : SEAGATE Barracuda 1 To, SDD : SEAGATE 250 Go, RAM : 2 x 4 Go CORSAIR Vengeance, PSU : CORSAIR 550W.")
-
         if "!pseudo" in text and len(text.split(" ")) < 2:
             send(u"Il était une fois, dans une lointaine contrée naz.. eu non.. en alsace, un jeune CM1 prénomé Bryan. Lors d'une journée d'orage, il jouait avec ses amis. Il jouais au foot. L'orage n'etait pas habituel (ciel violet, pluie fine et tout le tralala). ...")
             send(u"... Avec ses amis, ils s'amusaient à dire \"les elements se dechainent, les elements se déchainent\", ensuite, en classe, ils continuaient avec les elements, leur maîtresse dit \"oui bien l'element, il vas se calmer\". Depuis, element,est resté et s'est transformé en @elemzje. \"zje\" étant là uniquement, je cite, \"pour faire chier les gens\".")
@@ -460,7 +459,7 @@ try:
         if "!addquote" in text.split(" ")[0] and len(text.split(" ")) > 1 and user in modos:
             quote = ""
             quote = text.split("!addquote ")[1]
-            quotes.append(quote.decode('utf8'))
+            quotes.append(quote.decode('UTF8'))
             savejson()
             send("Quote enregistrée comme quote n°" + str(len(quotes)))
             log("Quote n°" + str(len(quotes)) + " Quote : " + quote)
@@ -472,10 +471,10 @@ try:
             else:
                 channelInfo()
                 send("Tirage au sort d'un personne à timeout parmis les " + str(chatnb) + " personnes presentes dans le chat...")
-                to = users[random.randint(0, len(users))].encode('utf8')
+                to = users[random.randint(0, len(users))].encode('UTF8')
                 send(to + u" a été tiré au sort pour un to de 100 secondes. Un dernier mot ? tu as 10 secondes...")
                 time.sleep(10)
-                send("/timeout " + to + u" 100 Desolé... cette commande est censé ne pas etre connue... je ne sais pas qui a hacké mon bot...")
+                send("/timeout " + to + u" 100 Desolé... cette commande est censé etre inconnue... Tu peux m'insulter sur le fait de l'avoir laissé... sur ce, salut ;) ")
                 send("Au plaisir @" + to)
 
         if "!followcount" in text.split(" ")[0]:
@@ -506,7 +505,7 @@ try:
             if streamstate[u'stream'] == None:
                 send("Stream OFF.. et il n'y a pas de downtime Kappa")
             else:
-                send("Stream up depuis " + TimeTwitch(streamstate["stream"]["created_at"].encode("utf8")))
+                send("Stream up depuis " + TimeTwitch(streamstate["stream"]["created_at"].encode("UTF8")))
 
 #        for i in [" cheat ", " hack ", " vac "]:
 #            if i in text:
@@ -575,14 +574,9 @@ try:
             send(temp)
 
 except KeyboardInterrupt:
-    stop = True
-    pause = True
     send("/disconnect")
-    savejson
+    savejson()
     print("En attente de la fin des threads...")
-    for i in range(0, 5):
-        time.sleep(1)
-        print(".")
     log("Extinction du Bot: KeyboardInterrupt")
     try:
         lcd_i2c.Afficher("KeyboardInterrupt", "fin")
@@ -596,14 +590,21 @@ except ZeroDivisionError, e:
     savejson()
     log(str(e))
     try:
-        lcd_i2c.Afficher("Bug:" + str(e))
+        lcd_i2c.Afficher("Crash:" + str(e))
     except Exception:
         pass
-    stop = True
-    pause = True
+
+except Exception, e:
+    print(str(e))
+    log("Crash : "+str(e))
+    try:
+        lcd_i2c.Afficher("Crash:" + str(e))
+    except Exception:
+        pass
+    savejson()
 
 finally:
     stop = True
     pause = True
-    log("Fin de l'execution/fin du log \r\n \n")
+    log("Fin de l'execution/fin du log \r\n")
     logfile.close
