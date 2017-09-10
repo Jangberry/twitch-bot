@@ -295,17 +295,19 @@ def recurrence():
                     if not pause and not pause:
                         channelInfo()
                         streaminfo()
-                        if chatnb == 2 and ("12:00:0" in time.ctime() or "00:00:0" in time.ctime()):
+                        if chatnb == 2 and time.ctime()[15:18] == "00:0" and not streamON:
                             print("###\r\nSaving log...")
                             global logfile
                             logfile.close()
                             logfile = open("chat.log", "a")
                             print("Log saved\r\n###")
-                    if not pause and not pause:
+                    if not pause and not pause and not time.ctime()[15:16] == "00:0":
                         time.sleep(5)
-                    if not pause and not pause and not streamON:
+                    else:
+                        time.sleep(3)
+                    if not pause and not pause and not streamON and not time.ctime()[15:18] == "00:0":
                         time.sleep(5)
-                    if not pause and not stop and not streamON:
+                    if not pause and not stop and not streamON and not time.ctime()[15:18] == "00:0":
                         time.sleep(5)
                     else:
                         break
