@@ -1,4 +1,4 @@
-#-*- coding: UTF8 -*-
+#-*- coding: utf-8 -*-
 from __future__ import print_function
 import json
 import random
@@ -8,7 +8,6 @@ import requests
 import sys
 import threading
 import time
-import codecs
 try:
     import lcd_i2c
 except Exception:
@@ -24,14 +23,13 @@ from info import *
 
 print("Initialization of variables and functions, and loading log...")
 
-
-logfile = codecs.open("chat.log", "a", "UTF8")
+logfile = open("chat.log", "a")
 #logfile = open("chat.log", "a")
-logfile.write(time.ctime() + " $ " + "Nouvelle connexion \r\n")
+logfile.write(time.ctime().encode("utf-8") + u" $ ".encode("utf-8") + u"Nouvelle connexion \r\n".encode("utf-8"))
 
 def log(LOG):
     try:
-        logfile.write(time.ctime().decode("UTF8") + u" $ " + LOG + u"\r\n")
+        logfile.write(time.ctime().encode("utf-8") + u" $ ".encode("utf-8") + LOG.encode("utf-8") + u"\r\n".encode("utf-8"))
     except Exception, e:
         print("Erreur log "+str(e))
         pass
@@ -106,7 +104,7 @@ def channelInfo():
                 send("Hi @notch ... no.. I'm not a strange bot.. I'm... diferent... Sooo glad to see you, and thanks a lot for your game ;) Can you learn me how to code ? (by /w you know... i'm only a bot and i haven't as much memory as you can think...")
             chatnb = infos[u"chatter_count"]
             if len(infos[u"chatters"][u"staff"]) > 0:
-                send(u"OMG !!! There is someone from the twitch's staff ?!? Welcome @" +infos[u"chatters"][u"staff"][0].encode("UTF8"))
+                send(u"OMG !!! There is someone from the twitch's staff ?!? Welcome @" +infos[u"chatters"][u"staff"][0].encode("utf-8"))
             retry = False
         except Exception:
             pass
@@ -118,7 +116,7 @@ def PubSub():
     ws = websocket.create_connection("wss://pubsub-edge.twitch.tv")
     print("Pubsub connected")
     print("Getting ChannelID for subscribing to a topic")
-    CHANNELID = requests.get("https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1] + "?client_id="+CLIENTID).json()[u'_id']
+    CHANNELID = requests.get("https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1], headers=headers).json()[u'_id']
     print("Subscribing to \"bits\" and \"subscribe\" events topic for channel "+CHANNEL.split("#")[1]+" with channelid : "+str(CHANNELID))
     ws.send('{"type": "LISTEN","nonce": "Yolo elemzje c\'est le meilleur", "data": {"topics": ["channel-bits-events-v1.'+str(CHANNELID)+'"],"auth_token": "'+CLIENTID+'"}}') #, \"channel-subscribe-events-v1."+str(CHANNELID)+"\
     print(ws.recv())
@@ -131,30 +129,39 @@ def streaminfo():
     retry = True
     while retry:
         try:
-            channelstate = requests.get("https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1] + "?client_id="+CLIENTID).json()
-            streamstate = requests.get("https://api.twitch.tv/kraken/streams/" + CHANNEL.split("#")[1] + "?client_id="+CLIENTID).json()
-            followers = requests.get(channelstate[u'_links'][u"follows"] + "?client_id=" + CLIENTID).json()
+            channelstate = requests.get("https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1], headers=headers).json()
+            streamstate = requests.get("https://api.twitch.tv/kraken/streams/" + CHANNEL.split("#")[1], headers=headers).json()
+            followers = requests.get(channelstate[u'_links'][u"follows"], headers=headers).json()
             retry = False
         except Exception:
             pass
 
 def API():
+    global followhorstream
+    global streamON
     streamlast = streamstate[u"stream"]
-    streamON = True
+    if streamlast != None:
+        streamON = True
+    else:
+        streamON = False
     while not stop:
         try:
             while not pause:
                 if streamstate[u"stream"] != None and not streamON:
                     streamON = True
                     send(u"Stream on \ud83d\udcfa sur le jeu " + streamstate[u"stream"][u"game"] +u" avec le titre " + channelstate[u"stream"][u"channel"][u"status"])
+                    send(str(len(tempnew))+u" personnes ont follow la chaîne hors stream: "+u" <3 ".join(followhorstream)+u". Merci pour leurs soutients ;)")
+                    followhorstream = []
                 if streamstate[u"stream"] == None and streamON:
                     streamON = False
-                    send(u"Fin de ce stream \ud83d\udcfa , merci a tous pour votre compagnie durant ce stream de "+ TimeTwitch(streamlast["created_at"]) +u", et à la prochaine ;) Pour etre au courant d'un prochain stream, allez suivre @elemzje sur twitter : https://twitter.com/Elemzje (ou activez la cloche Kappa ) ;) N'hesitez pas à follow la chaine si le contenu vous plait :)")
+                    send(u"Fin de ce stream \ud83d\udcfa , merci a tous pour votre compagnie durant ce stream de "+ TimeTwitch(streamlast["created_at"]) +u", et à la prochaine ;) N'hesitez pas a follow la chaine")
                 if streamON:
                     if streamlast[u"game"] != streamstate[u"stream"][u"game"]:
                         send(u"Nouveau jeu : \ud83c\udfae " + streamstate[u"stream"][u"game"])
+                    if streamlast[u"channel"][u"status"] != channelstate[u"stream"][u"channel"][u"status"]:
+                        sned(u"Nouveau titre : " + channelstate[u"stream"][u"channel"][u"status"])
                 streamlast = streamstate[u"stream"]
-                while streamlast == streamstate[u"stream"] and pause == 0 and stop == 0:
+                while streamlast == streamstate[u"stream"] and not pause and not pause:
                     time.sleep(2.5)
         except Exception, e:
             streaminfo()
@@ -163,6 +170,7 @@ def API():
 
 def newfollow():
     global followers
+    global followhorstream
     tempnew = []
     temp = ''
     followlast = followers[u'follows'][0][u"user"][u"_id"]
@@ -176,12 +184,14 @@ def newfollow():
                         break
                     temp = i[u"user"][u"display_name"]
                     if i[u"notifications"]:
-                        temp = temp + u" (qui a activé(e) les notifications, merci beaucoup ;) )"
+                        temp = "@" + temp + u" (qui a activé(e) les notifications, merci beaucoup ;) )"
                     tempnew.append(temp)
+                    if not streamON:
+                        followhorstream.append(temp)
                 del temp
                 if len(tempnew) > 0:
                     if len(tempnew) == 1:
-                        send(u"Bienvenue à @"+tempnew[0]+u". Merci pour ton follow et ton soutient, amuse-toi bien ;) <3")
+                        send(u"Bienvenue à "+tempnew[0]+u". Merci pour ton follow et ton soutient, amuse-toi bien ;) <3")
                     else:
                         send(u"Bienvenue aux "+str(len(tempnew))+u" nouveaux followers: "+u" <3 ".join(tempnew)+u". Merci pour vos soutients , amusez vous bien ;)")
                 del tempnew
@@ -195,11 +205,11 @@ def newfollow():
 
 def TimeTwitch(created_at, date=False):
     try:
-        depuis = created_at.decode("UTF8")
+        depuis = created_at.decode("utf-8")
         debut = []
         debut.append(int(depuis.split("-")[0]))
         debut.append(int(depuis.split("-")[1]))
-        debu.append(int(depuis.split("-")[2].split("T")[0]))
+        debut.append(int(depuis.split("-")[2].split("T")[0]))
         debut.append(int(depuis.split("T")[1].split(":")[0]) + 1)
         debut.append(int(depuis.split("T")[1].split(":")[1]))
         debut.append(int(depuis.split("T")[1].split(":")[2].split("Z")[0]))
@@ -207,8 +217,7 @@ def TimeTwitch(created_at, date=False):
         debut.append(0)
         debut.append(0)
         if date:
-            global TimeTwitchDate
-            TimeTwitchDate = time.strftime("%A %d %B %y a %H : %M : %S", debut)
+            Date = time.strftime("%A %d %B %y a %H : %M : %S", debut)
         debut = time.time() - time.mktime(debut)
         depuis = ""
         if debut > 31536000:
@@ -236,7 +245,12 @@ def TimeTwitch(created_at, date=False):
             else:
                 depuis = depuis + " "
         depuis = depuis + str((debut % 31536000 % 8640 % 3600 % 60) // 1).split(".")[0] + " secondes"
-        return depuis
+        if not date:
+            return depuis
+        else:
+            return [depuis, Date]
+            del Date
+        del date
         del depuis
         del debut
 
@@ -247,9 +261,9 @@ def TimeTwitch(created_at, date=False):
 
 def newchat():
     chatlt = chatnb
-    while stop == 0:
+    while not pause:
         try:
-            while pause == 0:
+            while not pause:
                 if chatnb > chatlt:
                     send("[" + str(chatnb) + " viewers (+" + str(chatnb - chatlt) + ")]")
                 elif chatnb < chatlt:
@@ -269,25 +283,29 @@ def newchat():
             pass
 
 def recurrence():
-    while stop == 0:
+    while not pause:
         try:
-            while pause == 0 and stop == 0:
+            while not pause and not pause:
                 try:
                     if chatnb != 2:
-                        send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("UTF8"))
+                        send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("utf-8"))
                 except Exception:
                     pass
                 for i in range(0, 600, 20):
-                    if pause == 0 and stop == 0:
+                    if not pause and not pause:
                         channelInfo()
                         streaminfo()
                         if chatnb == 2 and ("12:00:0" in time.ctime() or "00:00:0" in time.ctime()):
-                            print("### \r\nSaving log...")
-                            logfile.close()
+                            print("###\r\nSaving log...")
                             global logfile
-                            logfile = codecs.open("chat.log", "a", "UTF8")
-                            print("Log saved \r\n###")
-                    if pause == 0 and stop == 0:
+                            logfile.close()
+                            logfile = open("chat.log", "a")
+                            print("Log saved\r\n###")
+                    if not pause and not pause:
+                        time.sleep(5)
+                    if not pause and not pause and not streamON:
+                        time.sleep(5)
+                    if not pause and not stop and not streamON:
                         time.sleep(5)
                     else:
                         break
@@ -299,13 +317,16 @@ def recurrence():
 def send(Message):  # Envoit de messages dans le Channel
     log("Le bot envoie : " + Message)
     if "/" in Message[0]:
-        s.send("PRIVMSG " + CHANNEL + " :" + Message.encode("UTF8") + "\r\n")  # envoie commande
-        print("Command : " + Message.encode("UTF8"))
+        s.send("PRIVMSG " + CHANNEL + " :" + Message.encode("utf-8") + "\r\n")  # envoie commande
+        print("Command : " + Message.encode("utf-8"))
+        log("Command : " + Message.encode("utf-8"))
     else:
-        s.send(u"PRIVMSG ".encode("UTF8") + CHANNEL + u" :/me MrDestructoid : ".encode("UTF8") + Message.encode("UTF8") + u" MrDestructoid \r\n".encode("UTF8"))  # envoie message (MrDestructoid)
-        print("Bot ("+NICK+"): " + Message.encode("UTF8"))
+        s.send(u"PRIVMSG ".encode("utf-8") + CHANNEL.encode("utf-8") + u" :/me MrDestructoid : ".encode("utf-8") + Message.encode("utf-8") + u"\r\n".encode("utf-8"))  # envoie message (MrDestructoid)
+        print("Bot ("+NICK+"): " + Message.encode("utf-8"))
+        log("Bot ("+NICK+"): " + Message.encode("utf-8"))
 
 # Variables pour fonctions
+headers = {'Client-ID': CLIENTID}
 jsoninfo = open("info.json", "r")
 infojson = json.load(jsoninfo)
 jsoninfo.close()
@@ -314,7 +335,7 @@ CustMess = open("Messages custom.json")
 CustMess = json.load(CustMess)
 quotes = infojson[u'quotes']
 recurrenceMessages = infojson[u'reccurence']
-user = ''
+user = ""
 pause = True
 stop = False
 chatnb = 0
@@ -324,8 +345,10 @@ streamstate = []
 channelstate = []
 followers = []
 raffle = False
-raffleusr = [None]
+raffleusr = []
 roulette = False
+followhorstream = []
+
 print("Collecting API's infos for "+CHANNEL.split('#')[-1]+"'s channel")
 streaminfo()
 channelInfo()
@@ -335,14 +358,17 @@ try:
     lcd_i2c.main()
 except Exception:
     pass
+
 connection()
+
 print("Starting bot's functionnalities...")
 threading.Thread(target=recurrence).start()
 threading.Thread(target=newchat).start()
 threading.Thread(target=API).start()
 threading.Thread(target=newfollow).start()
 pause = False
-print("Bot fully started, here's the chat : \r\n")
+print("Bot fully started, here's the chat :\r\n")
+
 try:
     while 1:
         text = ""
@@ -362,11 +388,10 @@ try:
 
         if "PING" in recu:  # pong
             s.send("PONG :" + recu.split(":")[1] + "\r\n")
-            log("PING de twitch")
+            log("PING de twitch "+recu)
 
         elif len(recu.split(":")) >= 3 and "PRIVMSG" in recu:  # séparation user/texte
-            user = recu.split("!")[0]
-            user = user.split(":")[1]
+            user = recu.split("!")[0].split(":")[1]
             text = recu.split("PRIVMSG "+CHANNEL+" :")[1].split("\r\n")[0]
             print(user + " : " + text)  #console
             log(user + " : " + text)    #log
@@ -459,7 +484,7 @@ try:
         if "!addquote" in text.split(" ")[0] and len(text.split(" ")) > 1 and user in modos:
             quote = ""
             quote = text.split("!addquote ")[1]
-            quotes.append(quote.decode('UTF8'))
+            quotes.append(quote.decode('utf-8'))
             savejson()
             send("Quote enregistrée comme quote n°" + str(len(quotes)))
             log("Quote n°" + str(len(quotes)) + " Quote : " + quote)
@@ -471,7 +496,7 @@ try:
             else:
                 channelInfo()
                 send("Tirage au sort d'un personne à timeout parmis les " + str(chatnb) + " personnes presentes dans le chat...")
-                to = users[random.randint(0, len(users))].encode('UTF8')
+                to = users[random.randint(0, len(users))].encode('utf-8')
                 send(to + u" a été tiré au sort pour un to de 100 secondes. Un dernier mot ? tu as 10 secondes...")
                 time.sleep(10)
                 send("/timeout " + to + u" 100 Desolé... cette commande est censé etre inconnue... Tu peux m'insulter sur le fait de l'avoir laissé... sur ce, salut ;) ")
@@ -484,28 +509,26 @@ try:
             # send("42")
             if len(text.split(" ")) > 1:
                 user = text.split(" ")[1].split("@")[0]
-            r = requests.get("https://api.twitch.tv/kraken/users/"+user+"/follows/channels/"+CHANNEL.split('#')[1]+"?client_id="+CLIENTID).json()
+            r = requests.get("https://api.twitch.tv/kraken/users/"+user+"/follows/channels/"+CHANNEL.split('#')[1], headers=headers).json()
             if u'status' in r:
                 if r[u"status"] == 404:
                     send("Heu... 42 !!! "+str(r[u"message"]))
                 else:
                     send("Erreur inconue : " + str(r[u'status'])+str(r[u'message']))
             else:
-                TimeTwitchDate = None
                 temp = TimeTwitch(r[u"created_at"], True)
                 if r[u"notifications"]:
-                    send(u"@"+user+u" follow la chaine depuis le "+TimeTwitchDate+u", <3 soit "+temp+u". <3 En plus tu a activé les notification <3 <3 <3 , merci à toi <3")
+                    send(u"@"+user+u" follow la chaine depuis le "+temp[1]+u", <3 soit "+temp[0]+u". <3 En plus tu a activé les notification, merci à toi <3")
                 else:
-                    send(u"@"+user+u" follow la chaine depuis le "+TimeTwitchDate+u", <3 soit "+temp+u". <3")
+                    send(u"@"+user+u" follow la chaine depuis le "+temp[1]+u", <3 soit "+temp[0]+u". <3")
                 del temp
-                del TimeTwitchDate
             del r
 
         if "!uptime" in text.split(" ")[0]:
-            if streamstate[u'stream'] == None:
+            if not streamON:
                 send("Stream OFF.. et il n'y a pas de downtime Kappa")
             else:
-                send("Stream up depuis " + TimeTwitch(streamstate["stream"]["created_at"].encode("UTF8")))
+                send("Stream up depuis " + TimeTwitch(streamstate["stream"]["created_at"].encode("utf-8")))
 
 #        for i in [" cheat ", " hack ", " vac "]:
 #            if i in text:
@@ -533,8 +556,8 @@ try:
             send(raffledraw + u" à l'honneur d'avoir été tiré au sort, bravo à toi ;)")
 
         if "!roulette" in text.split(' ')[0]:
-            if ("francais" in text.split('!roulette')[1] or "français" in text.split('!roulette')[1]) and not roulette:
-                send(u"Départ de la roulette francaise (parce-qu'on joue avec un LFP586) vous devez d'abord remplir le barillet, tapez !barillet remplir (attention, si vous le faites plusieurs fois, il y aura plusieurs balles...), ensuite, tapez !roulette pour tirer (ne vous inquétez pas, vous avez un GILAYY, ça coupe juste un peu le souflle...). Si un coup part, vous devez reremplir le barillet. Faites \"!roulette stop\" pour ranger cette arme..")
+            if ("francais" in text.split('!roulette')[1] or "français" in text.split('!roulette')[1] or "russe" in text.split('!roulette')[1]) and not roulette:
+                send(u"Départ de la roulette francaise (parce-qu'on joue avec un LFP586) vous devez d'abord remplir le barillet, tapez !roulette remplir (attention, si vous le faites plusieurs fois, il y aura plusieurs balles...), ensuite, tapez !roulette pour tirer (ne vous inquétez pas, vous avez un GILAYY, ça coupe juste un peu le souflle...). Si un coup part, vous devez reremplir le barillet. Faites \"!roulette stop\" pour ranger cette arme..")
                 send(u"Ce jeu est aussi parfois appelé \"test de confiance du GIGN\"")
                 barillet = [False, False, False, False, False, False, 0]
                 roulette = True
