@@ -1,0 +1,4 @@
+﻿CHANNEL = "#<channel name(for exemple, mistercraft38)>"
+PASS = "oauth:******************************"   #get the one of the bot's twitch acount at http://twitchapps.com/tmi/
+NICK = "<Bot's nikname (need to be an existing twitch account)>"
+CLIENTID = "px5gnf6bsb227gmrb1ttyz1mt0lrf8"     #https://dev.twitch.tv/dashboard/apps/create

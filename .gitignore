@@ -1,4 +1,6 @@
 info.py
+info.json
+Messages custom.json
 *.txt
 *.pyc
 /.vs/*
