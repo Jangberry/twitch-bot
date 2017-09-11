@@ -171,24 +171,25 @@ def API():
 def newfollow():
     global followers
     global followhorstream
-    tempnew = []
-    temp = ''
     followlast = followers[u'follows'][0][u"user"][u"_id"]
     while not stop:
         try:
             while not pause:
                 tempnew = []
                 temp = ''
-                for i in followers[u'follows']:
+                fin = False
+                for i in followers[u'follows'] and not fin:
                     if i[u"user"][u"_id"] == followlast:
-                        break
+                        fin = True
                     temp = i[u"user"][u"display_name"]
                     if i[u"notifications"]:
                         temp = "@" + temp + u" (qui a activé(e) les notifications, merci beaucoup ;) )"
-                    tempnew.append(temp)
-                    if not streamON:
+                    if not fin:
+                        tempnew.append(temp)
+                    if not streamON and not fin:
                         followhorstream.append(temp)
                 del temp
+                del fin
                 if len(tempnew) > 0:
                     if len(tempnew) == 1:
                         send(u"Bienvenue à "+tempnew[0]+u". Merci pour ton follow et ton soutient, amuse-toi bien ;) <3")
@@ -196,8 +197,8 @@ def newfollow():
                         send(u"Bienvenue aux "+str(len(tempnew))+u" nouveaux followers: "+u" <3 ".join(tempnew)+u". Merci pour vos soutients , amusez vous bien ;)")
                 del tempnew
                 followlast = followers[u'follows'][0][u"user"][u"_id"]
-                while (not pause and not stop) and followlast == followers[u'follows'][0][u"user"][u"_id"]:
-                    time.sleep(2.5)
+                while not pause and not stop and followlast == followers[u'follows'][0][u"user"][u"_id"]:
+                    time.sleep(4)
         except Exception, e:
             print("erreur newfollow: "+ str(e))
             log("erreur newfollow: "+ str(e))
@@ -275,7 +276,7 @@ def newchat():
                 chatlt = chatnb
                 for i in range(0, 300, 5):
                     time.sleep(5)
-                    if stop != 0 or pause != 0:
+                    if stop or pause:
                         break
         except Exception, e:
             print("Probleme dans \"newchat\"" + str(e))
@@ -292,14 +293,14 @@ def recurrence():
                     if not pause and not pause:
                         channelInfo()
                         streaminfo()
-                        if chatnb == 2 and "00:0" in time.ctime()[14:18] and not streamON:
+                        if chatnb == 2 and ":00:0" in time.ctime() and not streamON:
                             print("###\r\nSaving log...")
                             global logfile
                             logfile.close()
                             logfile = open("chat.log", "a")
                             print("Log saved\r\n###")
                     if not pause and not pause:
-                        time.sleep(3)
+                        time.sleep(5)
                     else:
                         break
         except Exception, e:
@@ -440,8 +441,7 @@ try:
                 if len(text.split(" ")) == 3:
                     send("/timeout " + text.split(" ")[1] + " " + text.split(" ")[2])
                 else:
-                    send("/timeout " + text.split(" ")[1] + " " + text.split(" ")[2]+" ".join(text.split(" ")[3:]))
-
+                    send("/timeout " + text.split(" ")[1] + " " + text.split(" ")[2]+" "+" ".join(text.split(" ")[3:]))
 
         if "!au revoir" in text and user in modos:
             print("au revoir")
