@@ -286,29 +286,20 @@ def recurrence():
     while not pause:
         try:
             while not pause and not pause:
-                try:
-                    if chatnb != 2:
-                        send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("utf-8"))
-                except Exception:
-                    pass
+                if chatnb != 2:
+                    send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("utf-8"))
                 for i in range(0, 600, 20):
                     if not pause and not pause:
                         channelInfo()
                         streaminfo()
-                        if chatnb == 2 and time.ctime()[15:18] == "00:0" and not streamON:
+                        if chatnb == 2 and "00:0" in time.ctime()[14:18] and not streamON:
                             print("###\r\nSaving log...")
                             global logfile
                             logfile.close()
                             logfile = open("chat.log", "a")
                             print("Log saved\r\n###")
-                    if not pause and not pause and not time.ctime()[15:16] == "00:0":
-                        time.sleep(5)
-                    else:
+                    if not pause and not pause:
                         time.sleep(3)
-                    if not pause and not pause and not streamON and not time.ctime()[15:18] == "00:0":
-                        time.sleep(5)
-                    if not pause and not stop and not streamON and not time.ctime()[15:18] == "00:0":
-                        time.sleep(5)
                     else:
                         break
         except Exception, e:
@@ -390,7 +381,7 @@ try:
 
         if "PING" in recu:  # pong
             s.send("PONG :" + recu.split(":")[1] + "\r\n")
-            log("PING de twitch "+recu)
+            log("PING de twitch : "+recu.split("\r\n")[0])
 
         elif len(recu.split(":")) >= 3 and "PRIVMSG" in recu:  # séparation user/texte
             user = recu.split("!")[0].split(":")[1]
@@ -581,7 +572,7 @@ try:
                 roulette = False
                 del barillet
                 send(u"Bon... on arette de jouer.. on risquerai de blesser quelqu'un...")
-            elif roulette:
+            elif roulette and "" == text.split("!roulette")[1].split("\r\n")[0]:
                 if barillet[barillet[6]]:
                     send(u"PAN")
                     barillet[barillet[6]] = False
