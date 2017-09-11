@@ -178,7 +178,7 @@ def newfollow():
                 tempnew = []
                 temp = ''
                 fin = False
-                for i in followers[u'follows'] and not fin:
+                for i in followers[u'follows']:
                     if i[u"user"][u"_id"] == followlast:
                         fin = True
                     temp = i[u"user"][u"display_name"]
@@ -309,15 +309,14 @@ def recurrence():
             pass
 
 def send(Message):  # Envoit de messages dans le Channel
-    log("Le bot envoie : " + Message)
     if "/" in Message[0]:
         s.send("PRIVMSG " + CHANNEL + " :" + Message.encode("utf-8") + "\r\n")  # envoie commande
-        print("Command : " + Message.encode("utf-8"))
-        log("Command : " + Message.encode("utf-8"))
+        print("Command : " + Message)
+        log("Command : " + Message)
     else:
         s.send(u"PRIVMSG ".encode("utf-8") + CHANNEL.encode("utf-8") + u" :/me MrDestructoid : ".encode("utf-8") + Message.encode("utf-8") + u"\r\n".encode("utf-8"))  # envoie message (MrDestructoid)
-        print("Bot ("+NICK+"): " + Message.encode("utf-8"))
-        log("Bot ("+NICK+"): " + Message.encode("utf-8"))
+        print("Bot ("+NICK+"): " + Message)
+        log("Bot ("+NICK+"): " + Message)
 
 # Variables pour fonctions
 headers = {'Client-ID': CLIENTID}
