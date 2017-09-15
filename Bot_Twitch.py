@@ -131,7 +131,7 @@ def streaminfo():
         try:
             channelstate = requests.get("https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1], headers=headers).json()
             streamstate = requests.get("https://api.twitch.tv/kraken/streams/" + CHANNEL.split("#")[1], headers=headers).json()
-            followers = requests.get(channelstate[u'_links'][u"follows"], headers=headers).json()
+            followers = requests.get("https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1] +"/follows", headers=headers).json()
             retry = False
         except Exception:
             pass
@@ -161,7 +161,7 @@ def API():
                     if streamlast[u"channel"][u"status"] != channelstate[u"stream"][u"channel"][u"status"]:
                         sned(u"Nouveau titre : " + channelstate[u"stream"][u"channel"][u"status"])
                 streamlast = streamstate[u"stream"]
-                while streamlast == streamstate[u"stream"] and not pause and not pause:
+                while streamlast == streamstate[u"stream"] and not stop and not pause:
                     time.sleep(2.5)
         except Exception, e:
             streaminfo()
@@ -175,6 +175,7 @@ def newfollow():
     while not stop:
         try:
             while not pause:
+                print("nouveau(x) follow(s)")
                 tempnew = []
                 temp = ''
                 fin = False
@@ -188,15 +189,16 @@ def newfollow():
                         tempnew.append(temp)
                     if not streamON and not fin:
                         followhorstream.append(temp)
+                followlast = followers[u'follows'][0][u"user"][u"_id"]
                 del temp
                 del fin
+                print(tempnew)
                 if len(tempnew) > 0:
                     if len(tempnew) == 1:
                         send(u"Bienvenue à "+tempnew[0]+u". Merci pour ton follow et ton soutient, amuse-toi bien ;) <3")
                     else:
                         send(u"Bienvenue aux "+str(len(tempnew))+u" nouveaux followers: "+u" <3 ".join(tempnew)+u". Merci pour vos soutients , amusez vous bien ;)")
                 del tempnew
-                followlast = followers[u'follows'][0][u"user"][u"_id"]
                 while not pause and not stop and followlast == followers[u'follows'][0][u"user"][u"_id"]:
                     time.sleep(4)
         except Exception, e:
@@ -262,7 +264,7 @@ def TimeTwitch(created_at, date=False):
 
 def newchat():
     chatlt = chatnb
-    while not pause:
+    while not stop:
         try:
             while not pause:
                 if chatnb > chatlt:
@@ -284,22 +286,22 @@ def newchat():
             pass
 
 def recurrence():
-    while not pause:
+    while not stop:
         try:
-            while not pause and not pause:
-                if chatnb != 2:
+            while not pause and not stop:
+                if chatnb != 1:
                     send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("utf-8"))
                 for i in range(0, 600, 20):
-                    if not pause and not pause:
+                    if not pause and not stop:
                         channelInfo()
                         streaminfo()
-                        if chatnb == 2 and ":00:0" in time.ctime() and not streamON:
+                        if chatnb == 2 and ":00:0" in time.ctime() and streamON == 0:
                             print("###\r\nSaving log...")
                             global logfile
                             logfile.close()
                             logfile = open("chat.log", "a")
                             print("Log saved\r\n###")
-                    if not pause and not pause:
+                    if not pause and not stop:
                         time.sleep(5)
                     else:
                         break
