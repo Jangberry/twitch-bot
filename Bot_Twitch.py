@@ -175,24 +175,19 @@ def newfollow():
     while not stop:
         try:
             while not pause:
-                print("nouveau(x) follow(s)")
                 tempnew = []
                 temp = ''
-                fin = False
                 for i in followers[u'follows']:
                     if i[u"user"][u"_id"] == followlast:
-                        fin = True
+                        break
                     temp = i[u"user"][u"display_name"]
                     if i[u"notifications"]:
                         temp = "@" + temp + u" (qui a activé(e) les notifications, merci beaucoup ;) )"
-                    if not fin:
-                        tempnew.append(temp)
-                    if not streamON and not fin:
+                    tempnew.append(temp)
+                    if not streamON:
                         followhorstream.append(temp)
                 followlast = followers[u'follows'][0][u"user"][u"_id"]
                 del temp
-                del fin
-                print(tempnew)
                 if len(tempnew) > 0:
                     if len(tempnew) == 1:
                         send(u"Bienvenue à "+tempnew[0]+u". Merci pour ton follow et ton soutient, amuse-toi bien ;) <3")
@@ -289,7 +284,7 @@ def recurrence():
     while not stop:
         try:
             while not pause and not stop:
-                if chatnb != 1:
+                if chatnb != 2:
                     send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("utf-8"))
                 for i in range(0, 600, 20):
                     if not pause and not stop:
