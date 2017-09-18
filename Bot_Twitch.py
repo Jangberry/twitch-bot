@@ -149,19 +149,22 @@ def API():
             while not pause:
                 if streamstate[u"stream"] != None and not streamON:
                     streamON = True
-                    send(u"Stream on \ud83d\udcfa sur le jeu " + streamstate[u"stream"][u"game"] +u" avec le titre " + channelstate[u"stream"][u"channel"][u"status"])
-                    send(str(len(tempnew))+u" personnes ont follow la chaîne hors stream: "+u" <3 ".join(followhorstream)+u". Merci pour leurs soutients ;)")
-                    followhorstream = []
+                    send(u"Stream on \ud83d\udcfa sur le jeu " + channelstate[u"game"] +u" avec le titre " + channelstate[u"status"])
+                    if len(followhorstream) != 0:
+                        send(str(len(followhorstream))+u" personnes ont follow la chaîne hors stream: "+u" <3 ".join(followhorstream)+u" <3. Merci pour leurs soutients ;)")
+                    followhorstream = None
                 if streamstate[u"stream"] == None and streamON:
                     streamON = False
+                    followhorstream = []
                     send(u"Fin de ce stream \ud83d\udcfa , merci a tous pour votre compagnie durant ce stream de "+ TimeTwitch(streamlast["created_at"]) +u", et à la prochaine ;) N'hesitez pas a follow la chaine")
                 if streamON:
-                    if streamlast[u"game"] != streamstate[u"stream"][u"game"]:
-                        send(u"Nouveau jeu : \ud83c\udfae " + streamstate[u"stream"][u"game"])
-                    if streamlast[u"channel"][u"status"] != channelstate[u"stream"][u"channel"][u"status"]:
-                        sned(u"Nouveau titre : " + channelstate[u"stream"][u"channel"][u"status"])
+                    if channelast[u"game"] != channelstate[u"game"]:
+                        send(u"Nouveau jeu : \ud83c\udfae " + channelstate[u"game"])
+                    if channelast[u"status"] != channelstate[u"status"]:
+                        send(u"Nouveau titre : " + channelstate[u"status"])
                 streamlast = streamstate[u"stream"]
-                while streamlast == streamstate[u"stream"] and not stop and not pause:
+                channelast = channelstate
+                while streamlast == streamstate[u"stream"] and channelast == channelstate and not stop and not pause:
                     time.sleep(2.5)
         except Exception, e:
             streaminfo()
