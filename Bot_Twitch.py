@@ -72,7 +72,6 @@ def savejson():
     CustMess = CustMesstemp
     del CustMesstemp
 
-
 def refreshjson():
     global infojson
     global quotes
@@ -86,29 +85,6 @@ def refreshjson():
     CustMess = open("Messages custom.json")
     CustMess = json.load(CustMess)
 
-def channelInfo():
-    global users
-    global modos
-    global chatnb
-    retry = True
-    while retry:
-        try:
-            infos = requests.get("https://tmi.twitch.tv/group/user/" + CHANNEL.split("#")[1] + "/chatters").json()
-            users = infos[u"chatters"][u"viewers"]
-            # print(str(users))
-            modos = infos[u"chatters"][u"moderators"] + infos[u"chatters"][u"global_mods"] + infos[u"chatters"][u"staff"] + infos[u"chatters"][u"admins"]
-            # print(str(modos))
-            chatters = users + modos
-            if 'notch' in chatters:
-                send("hlepfbfofdjfofhdocehfodbdfo")
-                send("Hi @notch ... no.. I'm not a strange bot.. I'm... diferent... Sooo glad to see you, and thanks a lot for your game ;) Can you learn me how to code ? (by /w you know... i'm only a bot and i haven't as much memory as you can think...")
-            chatnb = infos[u"chatter_count"]
-            if len(infos[u"chatters"][u"staff"]) > 0:
-                send(u"OMG !!! There is someone from the twitch's staff ?!? Welcome @" +infos[u"chatters"][u"staff"][0].encode("utf-8"))
-            retry = False
-        except Exception:
-            pass
-
 def PubSub():
     global CHANNELID
     global ws
@@ -116,80 +92,142 @@ def PubSub():
     ws = websocket.create_connection("wss://pubsub-edge.twitch.tv")
     print("Pubsub connected")
     print("Getting ChannelID for subscribing to a topic")
-    CHANNELID = requests.get("https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1], headers=headers).json()[u'_id']
+    #CHANNELID = requests.get("https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1], headers=headers).json()[u'_id']
     print("Subscribing to \"bits\" and \"subscribe\" events topic for channel "+CHANNEL.split("#")[1]+" with channelid : "+str(CHANNELID))
     ws.send('{"type": "LISTEN","nonce": "Yolo elemzje c\'est le meilleur", "data": {"topics": ["channel-bits-events-v1.'+str(CHANNELID)+'"],"auth_token": "'+CLIENTID+'"}}') #, \"channel-subscribe-events-v1."+str(CHANNELID)+"\
     print(ws.recv())
 
 def streaminfo():
-    global streamstate
-    global channelstate
+    while not stop:
+        try:
+            while not pause:
+                if not stop and not pause:
+                    CHANNELSTATE()
+                    time.sleep(2.5)
+                if not stop and not pause:
+                    STREAMSTATE()
+                    time.sleep(2.5)
+                if not stop and not pause:
+                    FOLLOWERS()
+                    time.sleep(2.5)
+                if not stop and not pause:
+                    INFOSCHAT()
+                    time.sleep(2.5)
+                time.sleep(2.5)
+        except Exception, e:
+            print("Erreur streaminfo: "+str(e))
+            time.sleep(5)
+
+def INFOSCHAT():
+    global infos
+    global modos
+    global viewers
+    global chatnb
+    global chatters
+    retry = True
+    while retry:
+        try:
+            infos = requests.get("https://tmi.twitch.tv/group/user/" + CHANNEL.split("#")[1] + "/chatters").json()
+            modos = infos[u"chatters"][u"staff"] + infos[u"chatters"][u"admins"] + infos[u"chatters"][u"global_mods"] + infos[u"chatters"][u"moderators"]
+            viewers = infos[u"chatters"][u"viewers"]
+            chatnb = infos[u"chatter_count"]
+            chatters = viewers + modos
+            retry = False
+        except Exception, e:
+            print("Erreur infoschat: "+str(e))
+            time.sleep(5)
+    del retry
+
+def FOLLOWERS():
     global followers
-    global subs
+    retry = True
+    while retry:
+        try:
+            followers = requests.get("https://api.twitch.tv/helix/users/follows?to_id="+CHANNELID, headers=headers).json()[u"data"]
+            retry = False
+        except Exception, e:
+            print("Erreur get followers: "+str(e))
+            time.sleep(5)
+    del retry
+
+def STREAMSTATE():
+    global streamstate
+    retry = True
+    while retry:
+        try:
+            streamstate = requests.get("https://api.twitch.tv/helix/streams?user_id=" + CHANNELID, headers=headers).json()[u"data"]
+            retry = False
+        except Exception, e:
+            print("Erreur streamstate: "+str(e))
+            time.sleep(5)
+    del retry
+
+def CHANNELSTATE():
+    global channelstate
     retry = True
     while retry:
         try:
             channelstate = requests.get("https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1], headers=headers).json()
-            streamstate = requests.get("https://api.twitch.tv/kraken/streams/" + CHANNEL.split("#")[1], headers=headers).json()
-            followers = requests.get("https://api.twitch.tv/kraken/channels/" + CHANNEL.split("#")[1] +"/follows", headers=headers).json()
             retry = False
-        except Exception:
-            pass
+        except Exception, e:
+            print("Erreur channelstate: "+str(e))
+            time.sleep(5)
+    del retry
 
-def API():
+def StreamThread():
     global followhorstream
     global streamON
-    streamlast = streamstate[u"stream"]
-    if streamlast != None:
+    STREAMSTATE()
+    streamlast = streamstate
+    if streamstate != []:
         streamON = True
     else:
         streamON = False
     while not stop:
         try:
             while not pause:
-                if streamstate[u"stream"] != None and not streamON:
+                if streamstate != [] and not streamON:
                     streamON = True
-                    send(u"Stream on \ud83d\udcfa sur le jeu " + channelstate[u"game"] +u" avec le titre " + channelstate[u"status"])
+                    send(u"Stream on \ud83d\udcfa sur le jeu " + channelstate[u"game"] +u" avec le titre " + streamstate[0][u'title'])
                     if len(followhorstream) != 0:
                         send(str(len(followhorstream))+u" personnes ont follow la chaîne hors stream: "+u" <3 ".join(followhorstream)+u" <3. Merci pour leurs soutients ;)")
                     followhorstream = None
-                if streamstate[u"stream"] == None and streamON:
+                if streamstate[u"stream"] == [] and streamON:
                     streamON = False
                     followhorstream = []
-                    send(u"Fin de ce stream \ud83d\udcfa , merci a tous pour votre compagnie durant ce stream de "+ TimeTwitch(streamlast["created_at"]) +u", et à la prochaine ;) N'hesitez pas a follow la chaine")
+                    send(u"Fin de ce stream \ud83d\udcfa , merci a tous pour votre compagnie durant ce stream de "+ TimeTwitch(streamlast[u'data'][0][u'started_at']) +u", et à la prochaine ;) N'hesitez pas a follow la chaine")
                 if streamON:
                     if channelast[u"game"] != channelstate[u"game"]:
                         send(u"Nouveau jeu : \ud83c\udfae " + channelstate[u"game"])
-                    if channelast[u"status"] != channelstate[u"status"]:
-                        send(u"Nouveau titre : " + channelstate[u"status"])
-                streamlast = streamstate[u"stream"]
+                    if streamlast[u"data"][0][u'title'] != streamstate[0][u'title']:
+                        send(u"Nouveau titre : " + streamstate[0][u'title'])
+                streamlast = streamstate
                 channelast = channelstate
-                while streamlast == streamstate[u"stream"] and channelast == channelstate and not stop and not pause:
-                    time.sleep(2.5)
-        except Exception, e:
-            streaminfo()
+                while streamlast == streamstate and channelast == channelstate and not stop and not pause:
+                    time.sleep(5)
+        except Exception:
             pass
 
 
 def newfollow():
-    global followers
     global followhorstream
-    followlast = followers[u'follows'][0][u"user"][u"_id"]
+    FOLLOWERS()
+    followlast = followers[0][u"from_id"]
     while not stop:
         try:
             while not pause:
                 tempnew = []
                 temp = ''
-                for i in followers[u'follows']:
-                    if i[u"user"][u"_id"] == followlast:
+                for i in followers:
+                    if i[u"from_id"] == followlast:
                         break
-                    temp = i[u"user"][u"display_name"]
-                    if i[u"notifications"]:
-                        temp = "@" + temp + u" (qui a activé(e) les notifications, merci beaucoup ;) )"
-                    tempnew.append(temp)
+                    temp = getuser(userid=i["from_id"])
+                    #if i[u"notifications"]:
+                    #    temp = "@" + temp + u" (qui a activé(e) les notifications, merci beaucoup ;) )"
+                    tempnew.append("@"+temp)
                     if not streamON:
                         followhorstream.append(temp)
-                followlast = followers[u'follows'][0][u"user"][u"_id"]
+                followlast = followers[0][u"from_id"]
                 del temp
                 if len(tempnew) > 0:
                     if len(tempnew) == 1:
@@ -197,12 +235,12 @@ def newfollow():
                     else:
                         send(u"Bienvenue aux "+str(len(tempnew))+u" nouveaux followers: "+u" <3 ".join(tempnew)+u". Merci pour vos soutients , amusez vous bien ;)")
                 del tempnew
-                while not pause and not stop and followlast == followers[u'follows'][0][u"user"][u"_id"]:
-                    time.sleep(4)
+                while not pause and not stop and followlast == followers[0][u"from_id"]:
+                    time.sleep(5)
         except Exception, e:
             print("erreur newfollow: "+ str(e))
             log("erreur newfollow: "+ str(e))
-            pass
+            time.sleep(5)
 
 def TimeTwitch(created_at, date=False):
     try:
@@ -233,19 +271,19 @@ def TimeTwitch(created_at, date=False):
                 depuis = depuis + "s "
             else:
                 depuis = depuis + " "
-        if debut % 31536000 % 8640 > 3600:
-            depuis = depuis + str((debut % 31536000 %8640) // 3600).split(".")[0] + " heure"
-            if (debut % 31536000 % 8640) // 3600 > 7200:
+        if debut % 31536000 % 86400 > 3600:
+            depuis = depuis + str((debut % 31536000 % 86400) // 3600).split(".")[0] + " heure"
+            if (debut % 31536000 % 86400) // 3600 > 7200:
                 depuis = depuis + "s "
             else:
                 depuis = depuis + " "
-        if debut % 31536000 % 8640 % 3600 > 60:
-            depuis = depuis + str((debut % 31536000 % 8640 %3600) // 60).split(".")[0] + " minute"
-            if debut % 31536000 % 8640 % 3600 > 120:
+        if debut % 31536000 % 86400 % 3600 > 60:
+            depuis = depuis + str((debut % 31536000 % 86400 %3600) // 60).split(".")[0] + " minute"
+            if debut % 31536000 % 86400 % 3600 > 120:
                 depuis = depuis + "s "
             else:
                 depuis = depuis + " "
-        depuis = depuis + str((debut % 31536000 % 8640 % 3600 % 60) // 1).split(".")[0] + " secondes"
+        depuis = depuis + str((debut % 31536000 % 86400 % 3600 % 60) // 1).split(".")[0] + " secondes"
         if not date:
             return depuis
         else:
@@ -260,7 +298,26 @@ def TimeTwitch(created_at, date=False):
         log("erreur temps twitch: "+ str(e))
         pass
 
+def getuser(userid=0, username=0):
+    temp = ""
+    done = False
+    while not done:
+        if userid != 0:
+            try:
+                return(requests.get("https://api.twitch.tv/helix/users?id=" + userid, headers=headers).json()[u"data"][0][u"display_name"])
+                done = True
+            except Exception, e:
+                print("Get user "+str(e))
+        if username != 0:
+            try:
+                return(requests.get("https://api.twitch.tv/helix/users?login=" + username, headers=headers).json()[u"data"][0][u"id"])
+                done = True
+            except Exception, e:
+                print("Get id "+str(e))
+    del done
+
 def newchat():
+    INFOSCHAT()
     chatlt = chatnb
     while not stop:
         try:
@@ -289,16 +346,16 @@ def recurrence():
             while not pause and not stop:
                 if chatnb != 2:
                     send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)].encode("utf-8"))
-                for i in range(0, 600, 20):
+                for i in range(0, 600, 10):
                     if not pause and not stop:
-                        channelInfo()
-                        streaminfo()
-                        if chatnb == 2 and ":00:0" in time.ctime() and streamON == 0:
+                        if chatnb == 2 and "2:00:0" in time.ctime() and streamON == 0:
                             print("###\r\nSaving log...")
                             global logfile
                             logfile.close()
                             logfile = open("chat.log", "a")
                             print("Log saved\r\n###")
+                    if not pause and not stop:
+                        time.sleep(5)
                     if not pause and not stop:
                         time.sleep(5)
                     else:
@@ -319,7 +376,7 @@ def send(Message):  # Envoit de messages dans le Channel
         log("Bot ("+NICK+"): " + Message)
 
 # Variables pour fonctions
-headers = {'Client-ID': CLIENTID}
+headers = {'Client-ID': CLIENTID, "Authorization": "OAuth " + PASS.split("oauth:")[0]}
 jsoninfo = open("info.json", "r")
 infojson = json.load(jsoninfo)
 jsoninfo.close()
@@ -332,7 +389,7 @@ user = ""
 pause = True
 stop = False
 chatnb = 0
-users = []
+viewers = []
 modos = []
 streamstate = []
 channelstate = []
@@ -342,9 +399,12 @@ raffleusr = []
 roulette = False
 followhorstream = []
 
-print("Collecting API's infos for "+CHANNEL.split('#')[-1]+"'s channel")
-streaminfo()
-channelInfo()
+print("Collecting API's infos for "+CHANNEL.split('#')[1]+"'s channel")
+CHANNELID = getuser(username=CHANNEL.split("#")[1])
+STREAMSTATE()
+CHANNELSTATE()
+FOLLOWERS()
+INFOSCHAT()
 print("Done")
 
 try:
@@ -355,9 +415,10 @@ except Exception:
 connection()
 
 print("Starting bot's functionnalities...")
+threading.Thread(target=streaminfo).start()
 threading.Thread(target=recurrence).start()
 threading.Thread(target=newchat).start()
-threading.Thread(target=API).start()
+threading.Thread(target=StreamThread).start()
 threading.Thread(target=newfollow).start()
 pause = False
 print("Bot fully started, here's the chat :\r\n")
@@ -483,48 +544,49 @@ try:
             print("New quote (n°" + str(len(quotes)) + ") = " + quote)
 
         if "!tauhazard" in text.split(" ")[0]:
-            if len(users) == 0:
+            if len(viewers) == 0:
                 pass
             else:
-                channelInfo()
+                INFOSCHAT()
                 send("Tirage au sort d'un personne à timeout parmis les " + str(chatnb) + " personnes presentes dans le chat...")
-                to = users[random.randint(0, len(users))].encode('utf-8')
+                to = viewers[random.randint(0, len(viewers))].encode('utf-8')
                 send(to + u" a été tiré au sort pour un to de 100 secondes. Un dernier mot ? tu as 10 secondes...")
                 time.sleep(10)
                 send("/timeout " + to + u" 100 Desolé... cette commande est censé etre inconnue... Tu peux m'insulter sur le fait de l'avoir laissé... sur ce, salut ;) ")
                 send("Au plaisir @" + to)
 
-        if "!followcount" in text.split(" ")[0]:
-            send(str(followers[u"_total"])+" followers... ca fait beaucoup...")
+        #if "!followcount" in text.split(" ")[0]:
+        #    send(str(followers[u"_total"])+" followers... ca fait beaucoup...")
 
         if "!fc" in text.split(" ")[0]:
             # send("42")
             if len(text.split(" ")) > 1:
                 user = text.split(" ")[1].split("@")[0]
-            r = requests.get("https://api.twitch.tv/kraken/users/"+user+"/follows/channels/"+CHANNEL.split('#')[1], headers=headers).json()
-            if u'status' in r:
-                if r[u"status"] == 404:
-                    send("Heu... 42 !!! "+str(r[u"message"]))
+            try:
+                r = requests.get("https://api.twitch.tv/helix/users/follows?to_id="+CHANNELID+"&from_id="+getuser(username=user), headers=headers).json()[u"data"][0]
+                if u'status' in r:
+                    if r[u"status"] == 404:
+                        send("Heu... 42 !!! "+str(r[u"message"]))
+                    else:
+                        send("Erreur inconue : " + str(r[u'status'])+str(r[u'message']))
                 else:
-                    send("Erreur inconue : " + str(r[u'status'])+str(r[u'message']))
-            else:
-                temp = TimeTwitch(r[u"created_at"], True)
-                if r[u"notifications"]:
-                    send(u"@"+user+u" follow la chaine depuis le "+temp[1]+u", <3 soit "+temp[0]+u". <3 En plus tu a activé les notification, merci à toi <3")
-                else:
+                    temp = TimeTwitch(r[u"followed_at"], True)
+                    #if r[u"notifications"]:
+                    #    send(u"@"+user+u" follow la chaine depuis le "+temp[1]+u", <3 soit "+temp[0]+u". <3 En plus tu a activé les notification, merci à toi <3")
+                    #else:
                     send(u"@"+user+u" follow la chaine depuis le "+temp[1]+u", <3 soit "+temp[0]+u". <3")
-                del temp
-            del r
+                    del temp
+                del r
+            except Exception, e:
+                send("Erreur avec les serveurs de twitch :/ Veuillez reessayer. Si les problemes persistent, attendez environ une minute")
+                print("Follow check: "+str(e))
 
         if "!uptime" in text.split(" ")[0]:
             if not streamON:
                 send("Stream OFF.. et il n'y a pas de downtime Kappa")
             else:
-                send("Stream up depuis " + TimeTwitch(streamstate["stream"]["created_at"].encode("utf-8")))
+                send("Stream up depuis " + TimeTwitch(streamstate[0][u'started_at'].encode("utf-8")))
 
-#        for i in [" cheat ", " hack ", " vac "]:
-#            if i in text:
-#                send("/timeout "+ user+" 1 Appologie du hack (timeout visant a supprimer le message menant a des debats inutiles et sans fin) ")
 
         if "!addcmd" in text.split(" ")[0] and (user in modos or user == elemzje) and len(text.split(" ")) > 3:
             CustMess[text.split(" ")[1]] = " ".join(text.split(" ")[2:])
@@ -590,22 +652,10 @@ try:
 
 except KeyboardInterrupt:
     send("/disconnect")
-    savejson()
     print("En attente de la fin des threads...")
     log("Extinction du Bot: KeyboardInterrupt")
     try:
         lcd_i2c.Afficher("KeyboardInterrupt", "fin")
-    except Exception:
-        pass
-
-except ZeroDivisionError, e:
-    print(str(e))
-    log("/!\\ Crash : " + str(e) + "/!\\ \n\r /!\\ /!\\ /!\\ /!\\ /!\\ /!\\ /!\\ /!\\ /!\\ /!\\ ")
-    send("/disconnect")
-    savejson()
-    log(str(e))
-    try:
-        lcd_i2c.Afficher("Crash:" + str(e))
     except Exception:
         pass
 
@@ -616,10 +666,10 @@ except Exception, e:
         lcd_i2c.Afficher("Crash:" + str(e))
     except Exception:
         pass
-    savejson()
 
 finally:
     stop = True
     pause = True
+    savejson()
     log("Fin de l'execution/fin du log \r\n")
     logfile.close
