@@ -39,7 +39,7 @@ def connection():  # Connection au serveur + channel
     print("Welcome message : \r\n" + s.recv(2040).decode())
     print("Joining " + CHANNEL)
     s.send("JOIN ".encode() + CHANNEL.encode() + "\r\n".encode())
-    print(s.recv(2040).encode())
+    print(s.recv(2040).decode())
     print("Connected to "+CHANNEL)
     try:
         lcd_i2c.Afficher("Connected")
@@ -88,6 +88,7 @@ def streaminfo():
     while not stop:
         try:
             while not pause:
+                time.sleep(2.5)
                 if not stop and not pause:
                     CHANNELSTATE()
                     time.sleep(2.5)
@@ -100,7 +101,6 @@ def streaminfo():
                 if not stop and not pause:
                     INFOSCHAT()
                     time.sleep(2.5)
-                time.sleep(2.5)
         except Exception as e:
             print("Erreur streaminfo: "+str(e))
             time.sleep(5)
@@ -179,10 +179,10 @@ def StreamThread():
                     if len(followhorstream) != 0:
                         send(str(len(followhorstream))+" personnes ont follow la chaîne hors stream: "+" <3 ".join(followhorstream)+" <3. Merci pour leurs soutients ;)")
                     followhorstream = None
-                if streamstate["stream"] == [] and streamON:
+                if streamstate == [] and streamON:
                     streamON = False
                     followhorstream = []
-                    send("Fin de ce stream \ud83d\udcfa , merci a tous pour votre compagnie durant ce stream de "+ TimeTwitch(streamlast['data'][0]['started_at']) +", et à la prochaine ;) N'hesitez pas a follow la chaine")
+                    send("Fin de ce stream \ud83d\udcfa , merci a tous pour votre compagnie durant ce stream de "+ TimeTwitch(streamlast[0]['started_at']) +", et à la prochaine ;) N'hesitez pas a follow la chaine")
                 if streamON:
                     if channelast["game"] != channelstate["game"]:
                         send("Nouveau jeu : \ud83c\udfae " + channelstate["game"])
@@ -328,21 +328,20 @@ def newchat():
             pass
 
 def recurrence():
+    global LOGvar
     while not stop:
         try:
             while not pause and not stop:
                 if chatnb != 2:
                     send(recurrenceMessages[random.randint(0, len(recurrenceMessages)-1)])
-                for i in range(0, 600, 10):
-                    if not pause and not stop:
-                        if chatnb == 2 and not streamON and len(str(LOGvar)) > 1000:
-                            print("###\r\nSaving log...")
-                            global logfile
-                            logfile = open("chat.log", "a")
-                            logfile.write(str(LOGvar))
-                            logfile.close()
-                            LOGvar = ""
-                            print("Log saved\r\n###")
+                for i in range(0, 600, 5):
+                    if not pause and not stop and chatnb == 2 and not streamON and len(str(LOGvar)) > 1000:
+                        print("###\r\nSaving log...")
+                        logfile = open("chat.log", "a")
+                        logfile.write(str(LOGvar))
+                        logfile.close()
+                        LOGvar = ""
+                        print("Log saved\r\n###")
                     if not pause and not stop:
                         time.sleep(5)
                     else:
@@ -377,7 +376,8 @@ recurrenceMessages = infojson['reccurence']
 user = ""
 pause = True
 stop = False
-chatnb = 0
+streamON = True
+chatnb = 2
 viewers = []
 modos = []
 streamstate = []
@@ -390,10 +390,8 @@ followhorstream = []
 
 print("Collecting API's infos for "+CHANNEL.split('#')[1]+"'s channel")
 CHANNELID = getuser(username=CHANNEL.split("#")[1])
-STREAMSTATE()
-CHANNELSTATE()
-FOLLOWERS()
 INFOSCHAT()
+CHANNELSTATE()
 print("Done")
 
 try:
@@ -409,6 +407,7 @@ threading.Thread(target=recurrence).start()
 threading.Thread(target=newchat).start()
 threading.Thread(target=StreamThread).start()
 threading.Thread(target=newfollow).start()
+time.sleep(5)
 pause = False
 print("Bot fully started, here's the chat :\r\n")
 
@@ -548,7 +547,6 @@ try:
         #    send(str(followers["_total"])+" followers... ca fait beaucoup...")
 
         if "!fc" in text.split(" ")[0]:
-            # send("42")
             if len(text.split(" ")) > 1:
                 user = text.split(" ")[1].split("@")[0]
             try:
